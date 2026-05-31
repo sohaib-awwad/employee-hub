@@ -1,22 +1,30 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: HR Employee Portal API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: attendance
+    description: Punch in/out and attendance history
+  - name: leaves
+    description: Leave requests and balances
+  - name: holidays
+    description: Public and company holidays
+  - name: dashboard
+    description: Dashboard summary
+  - name: employees
+    description: Employee profile
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,180 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /employees/me:
+    get:
+      operationId: getMyProfile
+      tags: [employees]
+      summary: Get current employee profile
+      responses:
+        "200":
+          description: Employee profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /attendance:
+    get:
+      operationId: listAttendance
+      tags: [attendance]
+      summary: List attendance history
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: year
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttendanceRecord"
+
+  /attendance/today:
+    get:
+      operationId: getTodayAttendance
+      tags: [attendance]
+      summary: Get today's attendance record
+      responses:
+        "200":
+          description: Today's attendance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+
+  /attendance/punch-in:
+    post:
+      operationId: punchIn
+      tags: [attendance]
+      summary: Punch in
+      responses:
+        "200":
+          description: Punched in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+
+  /attendance/punch-out:
+    post:
+      operationId: punchOut
+      tags: [attendance]
+      summary: Punch out
+      responses:
+        "200":
+          description: Punched out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+
+  /leaves:
+    get:
+      operationId: listLeaves
+      tags: [leaves]
+      summary: List employee's leave requests
+      responses:
+        "200":
+          description: Leave requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaveRequest"
+    post:
+      operationId: createLeave
+      tags: [leaves]
+      summary: Apply for a leave
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeaveInput"
+      responses:
+        "201":
+          description: Leave created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveRequest"
+
+  /leaves/balance:
+    get:
+      operationId: getLeaveBalance
+      tags: [leaves]
+      summary: Get leave balance summary
+      responses:
+        "200":
+          description: Leave balance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveBalance"
+
+  /leaves/{id}:
+    delete:
+      operationId: cancelLeave
+      tags: [leaves]
+      summary: Cancel a leave request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Leave cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveRequest"
+
+  /holidays:
+    get:
+      operationId: listHolidays
+      tags: [holidays]
+      summary: List holidays
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Holidays
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Holiday"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +216,168 @@ components:
       required:
         - status
 
+    Employee:
+      type: object
+      required: [id, name, email, department, position, joinDate, avatarInitials]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        position:
+          type: string
+        joinDate:
+          type: string
+        avatarInitials:
+          type: string
+        phone:
+          type: ["string", "null"]
+        managerId:
+          type: ["integer", "null"]
+        managerName:
+          type: ["string", "null"]
+
+    AttendanceRecord:
+      type: object
+      required: [id, date, status]
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        punchIn:
+          type: ["string", "null"]
+        punchOut:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [present, absent, half_day, on_leave, holiday, weekend]
+        hoursWorked:
+          type: ["number", "null"]
+        note:
+          type: ["string", "null"]
+
+    LeaveRequest:
+      type: object
+      required: [id, type, startDate, endDate, days, status, reason, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [annual, sick, casual, maternity, paternity, unpaid, other]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        days:
+          type: number
+        status:
+          type: string
+          enum: [pending, approved, rejected, cancelled]
+        reason:
+          type: string
+        createdAt:
+          type: string
+        approvedBy:
+          type: ["string", "null"]
+        comments:
+          type: ["string", "null"]
+
+    LeaveInput:
+      type: object
+      required: [type, startDate, endDate, reason]
+      properties:
+        type:
+          type: string
+          enum: [annual, sick, casual, maternity, paternity, unpaid, other]
+        startDate:
+          type: string
+        endDate:
+          type: string
+        reason:
+          type: string
+
+    LeaveBalance:
+      type: object
+      required: [annual, sick, casual, used, remaining]
+      properties:
+        annual:
+          type: number
+        sick:
+          type: number
+        casual:
+          type: number
+        used:
+          type: number
+        remaining:
+          type: number
+        details:
+          type: array
+          items:
+            type: object
+            required: [type, total, used, remaining]
+            properties:
+              type:
+                type: string
+              total:
+                type: number
+              used:
+                type: number
+              remaining:
+                type: number
+
+    Holiday:
+      type: object
+      required: [id, name, date, type]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        date:
+          type: string
+        type:
+          type: string
+          enum: [public, company, optional]
+        description:
+          type: ["string", "null"]
+        dayOfWeek:
+          type: ["string", "null"]
+
+    DashboardSummary:
+      type: object
+      required: [employee, todayAttendance, leaveBalance, upcomingHolidays, recentAttendance, monthlyStats]
+      properties:
+        employee:
+          $ref: "#/components/schemas/Employee"
+        todayAttendance:
+          $ref: "#/components/schemas/AttendanceRecord"
+        leaveBalance:
+          $ref: "#/components/schemas/LeaveBalance"
+        upcomingHolidays:
+          type: array
+          items:
+            $ref: "#/components/schemas/Holiday"
+        recentAttendance:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceRecord"
+        monthlyStats:
+          type: object
+          required: [presentDays, absentDays, leaveDays, totalWorkingDays, attendanceRate]
+          properties:
+            presentDays:
+              type: integer
+            absentDays:
+              type: integer
+            leaveDays:
+              type: integer
+            totalWorkingDays:
+              type: integer
+            attendanceRate:
+              type: number
