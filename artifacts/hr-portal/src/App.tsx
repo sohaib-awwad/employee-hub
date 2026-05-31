@@ -6,8 +6,8 @@ import NotFound from "@/pages/not-found";
 import Layout from "@/components/layout";
 import Dashboard from "@/pages/dashboard";
 import Attendance from "@/pages/attendance";
-import Leaves from "@/pages/leaves";
-import Holidays from "@/pages/holidays";
+import LeaveRequests from "@/pages/leave-requests";
+import Announcements from "@/pages/announcements";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,8 +24,8 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/attendance" component={Attendance} />
-        <Route path="/leaves" component={Leaves} />
-        <Route path="/holidays" component={Holidays} />
+        <Route path="/leave-requests" component={LeaveRequests} />
+        <Route path="/announcements" component={Announcements} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

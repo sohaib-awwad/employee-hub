@@ -242,7 +242,45 @@ export const GetDashboardResponse = zod.object({
   "leaveDays": zod.number(),
   "totalWorkingDays": zod.number(),
   "attendanceRate": zod.number()
+}),
+  "weeklyHours": zod.array(zod.object({
+  "day": zod.string(),
+  "hours": zod.number()
+})),
+  "recentAnnouncements": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "category": zod.string(),
+  "priority": zod.enum(['low', 'medium', 'high']),
+  "type": zod.enum(['announcement', 'event']),
+  "publishedAt": zod.string()
+}))
 })
+
+
+/**
+ * @summary List announcements and events
+ */
+export const ListAnnouncementsQueryParams = zod.object({
+  "type": zod.union([zod.literal('announcement'),zod.literal('event'),zod.literal(null)]).nullish(),
+  "page": zod.coerce.number().nullish(),
+  "limit": zod.coerce.number().nullish()
+})
+
+export const ListAnnouncementsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "category": zod.string(),
+  "priority": zod.enum(['low', 'medium', 'high']),
+  "type": zod.enum(['announcement', 'event']),
+  "publishedAt": zod.string()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
 })
 
 

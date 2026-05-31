@@ -5,6 +5,7 @@ import attendanceRouter from "./attendance";
 import leavesRouter from "./leaves";
 import holidaysRouter from "./holidays";
 import dashboardRouter from "./dashboard";
+import announcementsRouter from "./announcements";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(attendanceRouter);
 router.use(leavesRouter);
 router.use(holidaysRouter);
 router.use(dashboardRouter);
+router.use(announcementsRouter);
 
 export default router;

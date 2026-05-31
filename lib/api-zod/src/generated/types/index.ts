@@ -6,10 +6,15 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './announcementItem';
+export * from './announcementItemPriority';
+export * from './announcementItemType';
+export * from './announcementsPage';
 export * from './attendanceRecord';
 export * from './attendanceRecordStatus';
 export * from './dashboardSummary';
 export * from './dashboardSummaryMonthlyStats';
+export * from './dashboardSummaryWeeklyHoursItem';
 export * from './employee';
 export * from './healthStatus';
 export * from './holiday';
@@ -21,5 +26,7 @@ export * from './leaveInputType';
 export * from './leaveRequest';
 export * from './leaveRequestStatus';
 export * from './leaveRequestType';
+export * from './listAnnouncementsParams';
+export * from './listAnnouncementsType';
 export * from './listAttendanceParams';
 export * from './listHolidaysParams';

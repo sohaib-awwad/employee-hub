@@ -5,8 +5,10 @@
  * HR Employee Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { AnnouncementItem } from './announcementItem';
 import type { AttendanceRecord } from './attendanceRecord';
 import type { DashboardSummaryMonthlyStats } from './dashboardSummaryMonthlyStats';
+import type { DashboardSummaryWeeklyHoursItem } from './dashboardSummaryWeeklyHoursItem';
 import type { Employee } from './employee';
 import type { Holiday } from './holiday';
 import type { LeaveBalance } from './leaveBalance';
@@ -18,4 +20,6 @@ export interface DashboardSummary {
   upcomingHolidays: Holiday[];
   recentAttendance: AttendanceRecord[];
   monthlyStats: DashboardSummaryMonthlyStats;
+  weeklyHours: DashboardSummaryWeeklyHoursItem[];
+  recentAnnouncements: AnnouncementItem[];
 }

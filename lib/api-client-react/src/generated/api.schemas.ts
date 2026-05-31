@@ -145,12 +145,51 @@ export interface Holiday {
   dayOfWeek?: string | null;
 }
 
+export type AnnouncementItemPriority = typeof AnnouncementItemPriority[keyof typeof AnnouncementItemPriority];
+
+
+export const AnnouncementItemPriority = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type AnnouncementItemType = typeof AnnouncementItemType[keyof typeof AnnouncementItemType];
+
+
+export const AnnouncementItemType = {
+  announcement: 'announcement',
+  event: 'event',
+} as const;
+
+export interface AnnouncementItem {
+  id: number;
+  title: string;
+  body: string;
+  category: string;
+  priority: AnnouncementItemPriority;
+  type: AnnouncementItemType;
+  publishedAt: string;
+}
+
+export interface AnnouncementsPage {
+  items: AnnouncementItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export type DashboardSummaryMonthlyStats = {
   presentDays: number;
   absentDays: number;
   leaveDays: number;
   totalWorkingDays: number;
   attendanceRate: number;
+};
+
+export type DashboardSummaryWeeklyHoursItem = {
+  day: string;
+  hours: number;
 };
 
 export interface DashboardSummary {
@@ -160,6 +199,8 @@ export interface DashboardSummary {
   upcomingHolidays: Holiday[];
   recentAttendance: AttendanceRecord[];
   monthlyStats: DashboardSummaryMonthlyStats;
+  weeklyHours: DashboardSummaryWeeklyHoursItem[];
+  recentAnnouncements: AnnouncementItem[];
 }
 
 export type ListAttendanceParams = {
@@ -179,4 +220,27 @@ export type ListHolidaysParams = {
  */
 year?: number | null;
 };
+
+export type ListAnnouncementsParams = {
+/**
+ * @nullable
+ */
+type?: ListAnnouncementsType;
+/**
+ * @nullable
+ */
+page?: number | null;
+/**
+ * @nullable
+ */
+limit?: number | null;
+};
+
+export type ListAnnouncementsType = typeof ListAnnouncementsType[keyof typeof ListAnnouncementsType] | null;
+
+
+export const ListAnnouncementsType = {
+  announcement: 'announcement',
+  event: 'event',
+} as const;
 

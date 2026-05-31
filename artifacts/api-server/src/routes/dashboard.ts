@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { employeesTable, attendanceTable, leavesTable, holidaysTable } from "@workspace/db";
-import { eq, and, gte, asc, desc } from "drizzle-orm";
-import { format, startOfMonth, endOfMonth, parseISO, isAfter } from "date-fns";
+import { employeesTable, attendanceTable, leavesTable, holidaysTable, announcementsTable } from "@workspace/db";
+import { eq, and, asc, desc } from "drizzle-orm";
+import { format, subDays, startOfWeek } from "date-fns";
 
 const EMPLOYEE_ID = 1;
 
@@ -14,6 +14,8 @@ const LEAVE_ALLOWANCES: Record<string, number> = {
 function getToday(): string {
   return format(new Date(), "yyyy-MM-dd");
 }
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const router = Router();
 
@@ -106,6 +108,23 @@ router.get("/dashboard", async (req, res) => {
     const totalWorkingDays = monthAttendance.filter(a => a.status !== "weekend" && a.status !== "holiday").length || 1;
     const attendanceRate = Math.round((presentDays / totalWorkingDays) * 100);
 
+    // Weekly hours (last 7 days, Sun-Sat)
+    const weekStart = startOfWeek(now);
+    const weeklyHours = DAYS.map((day, idx) => {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + idx);
+      const dateStr = format(d, "yyyy-MM-dd");
+      const record = recentAttendance.find(a => a.date === dateStr);
+      return { day, hours: record?.hoursWorked ?? 0 };
+    });
+
+    // Recent announcements
+    const recentAnnouncements = await db
+      .select()
+      .from(announcementsTable)
+      .orderBy(desc(announcementsTable.publishedAt))
+      .limit(3);
+
     res.json({
       employee,
       todayAttendance,
@@ -113,6 +132,8 @@ router.get("/dashboard", async (req, res) => {
       upcomingHolidays,
       recentAttendance,
       monthlyStats: { presentDays, absentDays, leaveDays, totalWorkingDays, attendanceRate },
+      weeklyHours,
+      recentAnnouncements,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to get dashboard");

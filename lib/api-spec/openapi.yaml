@@ -19,6 +19,8 @@ tags:
     description: Dashboard summary
   - name: employees
     description: Employee profile
+  - name: announcements
+    description: Announcements and events
 paths:
   /healthz:
     get:
@@ -206,6 +208,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
 
+  /announcements:
+    get:
+      operationId: listAnnouncements
+      tags: [announcements]
+      summary: List announcements and events
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: ["string", "null"]
+            enum: [announcement, event, null]
+        - name: page
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: limit
+          in: query
+          schema:
+            type: ["integer", "null"]
+      responses:
+        "200":
+          description: Announcements list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementsPage"
+
 components:
   schemas:
     HealthStatus:
@@ -349,9 +378,45 @@ components:
         dayOfWeek:
           type: ["string", "null"]
 
+    AnnouncementItem:
+      type: object
+      required: [id, title, body, category, priority, type, publishedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        body:
+          type: string
+        category:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+        type:
+          type: string
+          enum: [announcement, event]
+        publishedAt:
+          type: string
+
+    AnnouncementsPage:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnnouncementItem"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
     DashboardSummary:
       type: object
-      required: [employee, todayAttendance, leaveBalance, upcomingHolidays, recentAttendance, monthlyStats]
+      required: [employee, todayAttendance, leaveBalance, upcomingHolidays, recentAttendance, monthlyStats, weeklyHours, recentAnnouncements]
       properties:
         employee:
           $ref: "#/components/schemas/Employee"
@@ -381,3 +446,17 @@ components:
               type: integer
             attendanceRate:
               type: number
+        weeklyHours:
+          type: array
+          items:
+            type: object
+            required: [day, hours]
+            properties:
+              day:
+                type: string
+              hours:
+                type: number
+        recentAnnouncements:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnnouncementItem"

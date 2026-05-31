@@ -1,14 +1,66 @@
-import { useGetDashboard, getGetDashboardQueryKey, usePunchIn, usePunchOut, getGetTodayAttendanceQueryKey } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { useGetDashboard, getGetDashboardQueryKey, usePunchIn, usePunchOut, getGetTodayAttendanceQueryKey, getListAnnouncementsQueryKey } from "@workspace/api-client-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
-import { Clock, CheckCircle2, AlertCircle, Calendar as CalendarIcon, Briefcase } from "lucide-react";
+import { format, differenceInDays, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Clock, MapPin, BarChart2, Briefcase, CalendarDays, Bell, ChevronRight, Loader2 } from "lucide-react";
+import { Link } from "wouter";
+
+const formatTimeStr = (time: string) => {
+  const [h, m] = time.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
+};
+
+const formatWorkedTime = (minutes: number) => {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
+};
+
+function CircleProgress({ value, max, color, label, sublabel }: {
+  value: number; max: number; color: string; label: string; sublabel: string;
+}) {
+  const r = 32;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.min(value / max, 1);
+  const dash = pct * circ;
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="relative w-20 h-20 shrink-0">
+        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r={r} fill="none" stroke="#EDE9FE" strokeWidth="8" />
+          <circle
+            cx="40" cy="40" r={r} fill="none" stroke={color} strokeWidth="8"
+            strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-lg font-bold text-[#1A1A2E]">{value % 1 === 0 ? value : value.toFixed(1)}</span>
+        </div>
+      </div>
+      <div>
+        <p className="font-semibold text-[#1A1A2E] text-sm">{label}</p>
+        <p className="text-xs text-[#6B7280] mt-0.5">{sublabel}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(t);
+  }, []);
+
   const { data: dashboard, isLoading } = useGetDashboard({
     query: { queryKey: getGetDashboardQueryKey() }
   });
@@ -36,12 +88,18 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Skeleton className="h-48" />
-          <Skeleton className="h-48" />
-          <Skeleton className="h-48" />
+      <div className="space-y-6 max-w-7xl mx-auto">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <Skeleton className="lg:col-span-2 h-64" />
+          <div className="space-y-4">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <Skeleton className="h-56" />
+          <Skeleton className="h-56" />
         </div>
       </div>
     );
@@ -49,131 +107,297 @@ export default function Dashboard() {
 
   if (!dashboard) return null;
 
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-8 max-w-6xl mx-auto"
-    >
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-          Good morning, {dashboard.employee.name.split(' ')[0]}
-        </h1>
-        <p className="text-gray-500 mt-1">{format(new Date(), "EEEE, MMMM do, yyyy")}</p>
-      </div>
+  const { todayAttendance, leaveBalance, upcomingHolidays, weeklyHours, recentAnnouncements } = dashboard;
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Punch Status Card */}
-        <Card className="col-span-1 shadow-sm border-gray-200/60 dark:border-gray-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center text-gray-600 dark:text-gray-400">
-              <Clock className="w-4 h-4 mr-2" /> Today's Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {dashboard.todayAttendance?.punchIn ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                    <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Punched In</p>
-                    <p className="text-2xl font-bold tracking-tight">{format(new Date(dashboard.todayAttendance.punchIn), "h:mm a")}</p>
-                  </div>
-                </div>
-                {!dashboard.todayAttendance.punchOut && (
-                  <Button 
-                    className="w-full" 
-                    variant="outline" 
-                    onClick={handlePunchOut}
-                    disabled={punchOut.isPending}
-                  >
-                    {punchOut.isPending ? "Punching out..." : "Punch Out"}
-                  </Button>
-                )}
-                {dashboard.todayAttendance.punchOut && (
-                  <div className="pt-2 border-t">
-                    <p className="text-sm text-gray-500">Punched out at {format(new Date(dashboard.todayAttendance.punchOut), "h:mm a")}</p>
-                  </div>
-                )}
+  // Calculate worked minutes
+  let workedMinutes = 0;
+  if (todayAttendance.punchIn && todayAttendance.punchOut) {
+    const [ih, im] = todayAttendance.punchIn.split(":").map(Number);
+    const [oh, om] = todayAttendance.punchOut.split(":").map(Number);
+    workedMinutes = (oh * 60 + om) - (ih * 60 + im);
+  } else if (todayAttendance.punchIn && !todayAttendance.punchOut) {
+    const [ih, im] = todayAttendance.punchIn.split(":").map(Number);
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    workedMinutes = Math.max(0, nowMinutes - (ih * 60 + im));
+  }
+
+  const standardDay = 8 * 60;
+  const progressPct = Math.min((workedMinutes / standardDay) * 100, 100);
+  const breakMinutes = 33;
+  const remainingMinutes = Math.max(0, standardDay - workedMinutes);
+  const extraMinutes = Math.max(0, workedMinutes - standardDay);
+
+  const hasPunchedIn = !!todayAttendance.punchIn;
+  const hasPunchedOut = !!todayAttendance.punchOut;
+
+  const weekTotal = weeklyHours.reduce((s, d) => s + d.hours, 0);
+  const weekDays = weeklyHours.filter(d => d.hours > 0).length;
+  const maxBar = Math.max(...weeklyHours.map(d => d.hours), 1);
+
+  const annualDetail = leaveBalance.details?.find(d => d.type === "annual");
+  const sickDetail = leaveBalance.details?.find(d => d.type === "sick");
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-5 max-w-7xl mx-auto"
+    >
+      {/* Top row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Today's Attendance — spans 2 cols */}
+        <Card className="lg:col-span-2 border-[#E5E3F3] shadow-sm">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E]">
+                <CalendarDays className="w-4 h-4 text-[#6C5CE7]" />
+                Today's Attendance
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                    <AlertCircle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Not Punched In</p>
-                    <p className="text-sm text-gray-500">Start your day</p>
-                  </div>
-                </div>
-                <Button 
-                  className="w-full" 
-                  onClick={handlePunchIn}
-                  disabled={punchIn.isPending}
-                >
-                  {punchIn.isPending ? "Punching in..." : "Punch In Now"}
-                </Button>
+              <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+                <MapPin className="w-3.5 h-3.5" />
+                <span className={`flex items-center gap-1.5 font-medium text-xs px-2.5 py-1 rounded-full ${hasPunchedIn && !hasPunchedOut ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${hasPunchedIn && !hasPunchedOut ? "bg-green-500" : "bg-gray-400"}`} />
+                  {hasPunchedOut ? "Punched Out" : hasPunchedIn ? "Punched In" : "Not Started"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-1">
+              <span className="text-4xl font-bold text-[#1A1A2E] tabular-nums">
+                {formatWorkedTime(workedMinutes)}
+              </span>
+              <span className="ml-2 text-sm text-[#6B7280] font-medium">worked today</span>
+            </div>
+
+            {hasPunchedIn && (
+              <div className="flex items-center gap-4 text-sm text-[#6B7280] mb-4">
+                <span>
+                  {formatTimeStr(todayAttendance.punchIn!)}
+                  {hasPunchedOut ? ` – ${formatTimeStr(todayAttendance.punchOut!)}` : " – Now"}
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3" /> Remote
+                </span>
               </div>
             )}
-          </CardContent>
-        </Card>
 
-        {/* Leave Balance Card */}
-        <Card className="col-span-1 shadow-sm border-gray-200/60 dark:border-gray-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center text-gray-600 dark:text-gray-400">
-              <Briefcase className="w-4 h-4 mr-2" /> Leave Balance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <p className="text-3xl font-bold tracking-tight">{dashboard.leaveBalance.remaining} <span className="text-base font-normal text-gray-500">days left</span></p>
-              </div>
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                <div>
-                  <p className="text-sm text-gray-500">Annual</p>
-                  <p className="font-semibold">{dashboard.leaveBalance.annual}</p>
+            {/* Progress bar */}
+            <div className="h-2 bg-[#EDE9FE] rounded-full mb-5 overflow-hidden">
+              <div
+                className="h-full bg-[#6C5CE7] rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              {[
+                { label: "BREAK", value: formatWorkedTime(breakMinutes) },
+                { label: "REMAINING", value: formatWorkedTime(remainingMinutes) },
+                { label: "EXTRA HOURS", value: `+${formatWorkedTime(extraMinutes)}` },
+              ].map(({ label, value }) => (
+                <div key={label} className="bg-[#F8F7FF] rounded-xl p-3">
+                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wide mb-1">{label}</p>
+                  <p className="text-sm font-bold text-[#1A1A2E] tabular-nums">{value}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Sick</p>
-                  <p className="font-semibold">{dashboard.leaveBalance.sick}</p>
-                </div>
-              </div>
+              ))}
+            </div>
+
+            {/* Action row */}
+            <div className="flex items-center gap-4">
+              {!hasPunchedIn ? (
+                <Button
+                  className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white font-semibold px-6 gap-2"
+                  onClick={handlePunchIn}
+                  disabled={punchIn.isPending}
+                  data-testid="button-punch-in"
+                >
+                  {punchIn.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                  Punch In
+                </Button>
+              ) : !hasPunchedOut ? (
+                <Button
+                  variant="outline"
+                  className="border-[#6C5CE7] text-[#6C5CE7] hover:bg-[#EDE9FE] font-semibold px-6 gap-2"
+                  onClick={handlePunchOut}
+                  disabled={punchOut.isPending}
+                  data-testid="button-punch-out"
+                >
+                  {punchOut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Clock className="w-4 h-4" />}
+                  Punch Out
+                </Button>
+              ) : (
+                <span className="text-sm text-[#6B7280] font-medium">Day complete</span>
+              )}
+              <button className="text-sm text-[#6C5CE7] hover:underline font-medium">Request Correction</button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stats Card */}
-        <Card className="col-span-1 shadow-sm border-gray-200/60 dark:border-gray-800">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center text-gray-600 dark:text-gray-400">
-              <CalendarIcon className="w-4 h-4 mr-2" /> Monthly Stats
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Right column — Weekly Hours + Leave Balance */}
+        <div className="flex flex-col gap-5">
+          {/* Weekly Work Hours */}
+          <Card className="border-[#E5E3F3] shadow-sm flex-1">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] mb-3">
+                <BarChart2 className="w-4 h-4 text-[#6C5CE7]" />
+                Weekly Work Hours
+              </div>
+              <div className="flex items-baseline gap-3 mb-3">
+                <span className="text-2xl font-bold text-[#1A1A2E]">{weekTotal.toFixed(1)}</span>
+                <span className="text-xs text-[#6B7280]">hrs this week</span>
+                <span className="text-sm font-semibold text-[#1A1A2E] ml-2">{weekDays}</span>
+                <span className="text-xs text-[#6B7280]">days worked</span>
+              </div>
+              <div className="flex items-end gap-1.5 h-16">
+                {weeklyHours.map(({ day, hours }) => (
+                  <div key={day} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full flex items-end justify-center" style={{ height: 44 }}>
+                      <div
+                        className="w-full max-w-[20px] rounded-t-sm bg-[#6C5CE7] transition-all"
+                        style={{ height: `${Math.round((hours / maxBar) * 44)}px`, opacity: hours > 0 ? 1 : 0.2 }}
+                      />
+                    </div>
+                    <span className="text-[9px] text-[#6B7280] font-medium">{day}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Leave Balance */}
+          <Card className="border-[#E5E3F3] shadow-sm flex-1">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] mb-4">
+                <Briefcase className="w-4 h-4 text-[#6C5CE7]" />
+                Leave Balance
+              </div>
+              <div className="space-y-4">
+                {annualDetail && (
+                  <CircleProgress
+                    value={annualDetail.remaining}
+                    max={annualDetail.total}
+                    color="#F59E0B"
+                    label="Annual Leave"
+                    sublabel={`${annualDetail.used} / ${annualDetail.total} days`}
+                  />
+                )}
+                {sickDetail && (
+                  <CircleProgress
+                    value={sickDetail.remaining}
+                    max={sickDetail.total}
+                    color="#6C5CE7"
+                    label="Sick Leave"
+                    sublabel={`${sickDetail.used} / ${sickDetail.total} days`}
+                  />
+                )}
+              </div>
+              <Link href="/leave-requests">
+                <Button className="w-full mt-4 bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white text-sm font-semibold gap-2" data-testid="button-request-leave">
+                  <ChevronRight className="w-4 h-4" />
+                  Request Leave
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Upcoming Holidays */}
+        <Card className="border-[#E5E3F3] shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] mb-4">
+              <CalendarDays className="w-4 h-4 text-[#6C5CE7]" />
+              Upcoming Holidays
+            </div>
             <div className="space-y-4">
-              <div>
-                <p className="text-3xl font-bold tracking-tight">{dashboard.monthlyStats.attendanceRate}% <span className="text-base font-normal text-gray-500">rate</span></p>
+              {upcomingHolidays.slice(0, 4).map((h) => {
+                const date = parseISO(h.date);
+                const daysLeft = differenceInDays(date, new Date());
+                return (
+                  <div key={h.id} className="flex items-start gap-4">
+                    <div className="w-12 shrink-0 text-center rounded-xl bg-[#6C5CE7] text-white py-1.5">
+                      <div className="text-[9px] font-semibold uppercase tracking-wide opacity-80">
+                        {format(date, "MMM")}
+                      </div>
+                      <div className="text-lg font-bold leading-tight">{format(date, "d")}</div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-[#1A1A2E] text-sm truncate">{h.name}</p>
+                      <p className="text-xs text-[#6B7280] mt-0.5">
+                        {h.dayOfWeek}, {format(date, "MMMM d")}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="text-[10px] text-[#6B7280]">In {daysLeft} days</span>
+                        <span className="text-[10px] bg-[#F4F3FF] text-[#6C5CE7] px-2 py-0.5 rounded-full font-medium capitalize">
+                          {h.type}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {upcomingHolidays.length === 0 && (
+                <p className="text-sm text-[#6B7280] py-4 text-center">No upcoming holidays</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Announcements & Events */}
+        <Card className="border-[#E5E3F3] shadow-sm">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E]">
+                <Bell className="w-4 h-4 text-[#6C5CE7]" />
+                Announcements &amp; Events
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                <div>
-                  <p className="text-sm text-gray-500">Present</p>
-                  <p className="font-semibold text-green-600">{dashboard.monthlyStats.presentDays} days</p>
+              <Link href="/announcements" className="text-xs text-[#6C5CE7] hover:underline font-medium flex items-center gap-1">
+                View All <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-0 border-b border-[#E5E3F3] mb-4">
+              {["Announcements", "Events"].map((tab) => (
+                <button
+                  key={tab}
+                  className="px-4 pb-2 text-sm font-medium border-b-2 border-[#6C5CE7] text-[#6C5CE7] first-of-type:border-b-2 [&:not(:first-of-type)]:border-transparent [&:not(:first-of-type)]:text-[#6B7280]"
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-4">
+              {recentAnnouncements.map((a) => (
+                <div key={a.id} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#F4F3FF] flex items-center justify-center shrink-0 mt-0.5">
+                    <Bell className="w-3.5 h-3.5 text-[#6C5CE7]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-[#1A1A2E] truncate">{a.title}</p>
+                      <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded font-medium whitespace-nowrap ${
+                        a.priority === "high" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
+                      }`}>
+                        {a.category}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-2">{a.body}</p>
+                    <p className="text-[10px] text-[#9CA3AF] mt-1">
+                      {format(parseISO(a.publishedAt), "MMM d")}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Absent</p>
-                  <p className="font-semibold text-red-600">{dashboard.monthlyStats.absentDays} days</p>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       </div>
-
     </motion.div>
   );
 }

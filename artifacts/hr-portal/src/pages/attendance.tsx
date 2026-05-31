@@ -1,28 +1,61 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useListAttendance, getListAttendanceQueryKey, useGetTodayAttendance, getGetTodayAttendanceQueryKey, usePunchIn, usePunchOut } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { Send, Search, MoreVertical, Loader2 } from "lucide-react";
+
+const formatTimeStr = (time: string) => {
+  const [h, m] = time.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
+};
+
+const formatHoursWorked = (hours: number) => {
+  const totalMin = Math.round(hours * 60);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
+};
+
+const getDayName = (dateStr: string) => {
+  return format(parseISO(dateStr), "EEE");
+};
+
+const getStatusDisplay = (record: { status: string; hoursWorked?: number | null }) => {
+  const { status, hoursWorked } = record;
+  if (status === "weekend") return { label: "Weekend", cls: "bg-gray-100 text-gray-500" };
+  if (status === "on_leave") return { label: "On Leave", cls: "bg-blue-100 text-blue-700" };
+  if (status === "absent") return { label: "Absent", cls: "bg-red-100 text-red-700" };
+  if (status === "half_day") return { label: "Partial", cls: "bg-amber-100 text-amber-700" };
+  if (status === "holiday") return { label: "Holiday", cls: "bg-purple-100 text-purple-700" };
+  if (hoursWorked && hoursWorked > 8) return { label: "Extra Hours", cls: "bg-[#EDE9FE] text-[#6C5CE7]" };
+  return { label: "Present", cls: "bg-green-100 text-green-700" };
+};
+
+const TODAY = format(new Date(), "yyyy-MM-dd");
 
 export default function Attendance() {
-  const [currentTime, setCurrentTime] = useState(new Date());
   const queryClient = useQueryClient();
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchDate, setSearchDate] = useState("");
 
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
 
   const { data: todayRecord, isLoading: todayLoading } = useGetTodayAttendance({
     query: { queryKey: getGetTodayAttendanceQueryKey() }
   });
 
-  const { data: history, isLoading: historyLoading } = useListAttendance(undefined, {
-    query: { queryKey: getListAttendanceQueryKey() }
+  const params = { month: currentMonth, year: currentYear };
+  const { data: history, isLoading: historyLoading } = useListAttendance(params, {
+    query: { queryKey: getListAttendanceQueryKey(params) }
   });
 
   const punchIn = usePunchIn();
@@ -32,7 +65,7 @@ export default function Attendance() {
     punchIn.mutate(undefined, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetTodayAttendanceQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey(params) });
       }
     });
   };
@@ -41,144 +74,191 @@ export default function Attendance() {
     punchOut.mutate(undefined, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetTodayAttendanceQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey(params) });
       }
     });
   };
 
-  const formatTimeStr = (time: string) => {
-    const [h, m] = time.split(":").map(Number);
-    const ampm = h >= 12 ? "PM" : "AM";
-    const hour = h % 12 || 12;
-    return `${hour}:${String(m).padStart(2, "0")} ${ampm}`;
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'present': return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-none shadow-none">Present</Badge>;
-      case 'absent': return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-none shadow-none">Absent</Badge>;
-      case 'half_day': return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100 border-none shadow-none">Half Day</Badge>;
-      case 'on_leave': return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-none shadow-none">On Leave</Badge>;
-      case 'holiday': return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 border-none shadow-none">Holiday</Badge>;
-      case 'weekend': return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 border-none shadow-none">Weekend</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
-    }
-  };
+  const filtered = (history ?? []).filter((r) => {
+    if (searchDate && !r.date.includes(searchDate)) return false;
+    if (statusFilter === "all") return true;
+    if (statusFilter === "extra") return (r.hoursWorked ?? 0) > 8;
+    return r.status === statusFilter;
+  });
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }}
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-5xl mx-auto space-y-8"
+      transition={{ duration: 0.3 }}
+      className="max-w-6xl mx-auto space-y-6"
     >
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        
-        {/* Live Clock Card */}
-        <Card className="w-full md:w-1/3 bg-primary text-primary-foreground border-none shadow-md">
-          <CardContent className="p-8 text-center space-y-6">
-            <div className="space-y-2">
-              <h2 className="text-xl font-medium opacity-90">{format(currentTime, "EEEE, MMMM d")}</h2>
-              <div className="text-5xl font-bold tracking-tighter tabular-nums">
-                {format(currentTime, "HH:mm:ss")}
-              </div>
-            </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1A1A2E]">Attendance</h1>
+          <p className="text-sm text-[#6B7280] mt-0.5">Track your daily attendance, breaks, and work hours</p>
+        </div>
+        <Button className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white gap-2 self-start sm:self-auto" data-testid="button-send-attendance-request">
+          <Send className="w-4 h-4" />
+          Send Attendance Request
+        </Button>
+      </div>
 
-            {todayLoading ? (
-              <Skeleton className="h-12 w-full bg-white/20" />
-            ) : (
-              <div className="space-y-4">
-                {!todayRecord?.punchIn ? (
-                  <Button 
-                    size="lg" 
-                    className="w-full bg-white text-primary hover:bg-gray-100 font-semibold h-14 text-lg shadow-sm"
-                    onClick={handlePunchIn}
-                    disabled={punchIn.isPending}
-                  >
-                    {punchIn.isPending ? "Punching in..." : "Punch In"}
-                  </Button>
-                ) : !todayRecord.punchOut ? (
-                  <div className="space-y-3">
-                    <p className="text-sm opacity-90">Punched in at {format(new Date(todayRecord.punchIn), "h:mm a")}</p>
-                    <Button 
-                      size="lg" 
-                      variant="outline"
-                      className="w-full border-white/30 hover:bg-white/10 text-white font-semibold h-14 text-lg"
-                      onClick={handlePunchOut}
-                      disabled={punchOut.isPending}
-                    >
-                      {punchOut.isPending ? "Punching out..." : "Punch Out"}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                    <p className="font-medium">Day Complete</p>
-                    <p className="text-sm opacity-80 mt-1">Punched out at {format(new Date(todayRecord.punchOut), "h:mm a")}</p>
-                  </div>
-                )}
-              </div>
-            )}
+      {/* Punch in/out quick card if today not done */}
+      {!todayLoading && todayRecord && !todayRecord.punchIn && (
+        <Card className="border-[#E5E3F3] bg-[#F8F7FF]">
+          <CardContent className="p-4 flex items-center justify-between gap-4">
+            <p className="text-sm font-medium text-[#1A1A2E]">You haven't punched in today yet.</p>
+            <Button
+              className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white gap-2"
+              onClick={handlePunchIn}
+              disabled={punchIn.isPending}
+              data-testid="button-punch-in"
+            >
+              {punchIn.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Punch In
+            </Button>
           </CardContent>
         </Card>
+      )}
+      {!todayLoading && todayRecord?.punchIn && !todayRecord?.punchOut && (
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="p-4 flex items-center justify-between gap-4">
+            <p className="text-sm font-medium text-green-800">
+              Punched in at {formatTimeStr(todayRecord.punchIn)} — remember to punch out before you leave.
+            </p>
+            <Button
+              variant="outline"
+              className="border-[#6C5CE7] text-[#6C5CE7] hover:bg-[#EDE9FE] gap-2"
+              onClick={handlePunchOut}
+              disabled={punchOut.isPending}
+              data-testid="button-punch-out"
+            >
+              {punchOut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+              Punch Out
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
-        {/* History Table */}
-        <div className="flex-1 w-full">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">Monthly Log</h2>
-          <Card className="border-gray-200/60 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-gray-50/80 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
-                  <tr>
-                    <th className="px-6 py-4 font-medium text-gray-500">Date</th>
-                    <th className="px-6 py-4 font-medium text-gray-500">Status</th>
-                    <th className="px-6 py-4 font-medium text-gray-500">Punch In</th>
-                    <th className="px-6 py-4 font-medium text-gray-500">Punch Out</th>
-                    <th className="px-6 py-4 font-medium text-gray-500 text-right">Hours</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {historyLoading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i}>
-                        <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
-                        <td className="px-6 py-4"><Skeleton className="h-6 w-20 rounded-full" /></td>
-                        <td className="px-6 py-4"><Skeleton className="h-4 w-16" /></td>
-                        <td className="px-6 py-4"><Skeleton className="h-4 w-16" /></td>
-                        <td className="px-6 py-4"><Skeleton className="h-4 w-12 ml-auto" /></td>
-                      </tr>
-                    ))
-                  ) : history?.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                        No attendance records found.
-                      </td>
-                    </tr>
-                  ) : (
-                    history?.map((record) => (
-                      <tr key={record.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-900/50 transition-colors">
-                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">
-                          {format(new Date(record.date), "MMM d, yyyy")}
-                        </td>
-                        <td className="px-6 py-4">
-                          {getStatusBadge(record.status)}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {record.punchIn ? formatTimeStr(record.punchIn) : "-"}
-                        </td>
-                        <td className="px-6 py-4 text-gray-600">
-                          {record.punchOut ? formatTimeStr(record.punchOut) : "-"}
-                        </td>
-                        <td className="px-6 py-4 text-right font-medium">
-                          {record.hoursWorked ? `${record.hoursWorked.toFixed(1)}h` : "-"}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+      {/* Attendance Summary Table */}
+      <Card className="border-[#E5E3F3] shadow-sm overflow-hidden">
+        <CardContent className="p-0">
+          {/* Table header row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b border-[#E5E3F3]">
+            <h2 className="text-base font-semibold text-[#1A1A2E]">My Attendance Summary</h2>
+            <div className="flex flex-wrap gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-36 text-sm border-[#E5E3F3] bg-white" data-testid="select-status-filter">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="present">Present</SelectItem>
+                  <SelectItem value="extra">Extra Hours</SelectItem>
+                  <SelectItem value="half_day">Partial</SelectItem>
+                  <SelectItem value="absent">Absent</SelectItem>
+                  <SelectItem value="on_leave">On Leave</SelectItem>
+                  <SelectItem value="weekend">Weekend</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
+                <Input
+                  className="pl-8 w-52 text-sm border-[#E5E3F3] bg-white"
+                  placeholder="Search by date (e.g. 2026-01-01)"
+                  value={searchDate}
+                  onChange={(e) => setSearchDate(e.target.value)}
+                  data-testid="input-search-date"
+                />
+              </div>
             </div>
-          </Card>
-        </div>
-      </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#E5E3F3] bg-[#FAFAFA]">
+                  {["Date", "Day", "Punch In", "Punch Out", "Total Worked", "Status", "Actions"].map((col) => (
+                    <th key={col} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F4F3FF]">
+                {historyLoading ? (
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <tr key={i}>
+                      {Array.from({ length: 7 }).map((_, j) => (
+                        <td key={j} className="px-5 py-4">
+                          <Skeleton className="h-4 w-20" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-5 py-14 text-center text-[#6B7280] text-sm">
+                      No attendance records found.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((record) => {
+                    const isToday = record.date === TODAY;
+                    const statusDisplay = getStatusDisplay(record);
+                    return (
+                      <tr key={record.id} className="hover:bg-[#FAFAFA] transition-colors" data-testid={`row-attendance-${record.id}`}>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-[#1A1A2E]">
+                              {format(parseISO(record.date), "MMM d, yyyy")}
+                            </span>
+                            {isToday && (
+                              <span className="text-[10px] bg-[#EDE9FE] text-[#6C5CE7] px-2 py-0.5 rounded-full font-semibold">
+                                Today
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5 text-[#6B7280]">{getDayName(record.date)}</td>
+                        <td className="px-5 py-3.5 text-[#1A1A2E]">
+                          {record.punchIn ? formatTimeStr(record.punchIn) : <span className="text-[#9CA3AF]">--</span>}
+                        </td>
+                        <td className="px-5 py-3.5 text-[#1A1A2E]">
+                          {record.punchOut ? formatTimeStr(record.punchOut) : <span className="text-[#9CA3AF]">--</span>}
+                        </td>
+                        <td className="px-5 py-3.5 font-medium text-[#1A1A2E] tabular-nums">
+                          {record.hoursWorked ? formatHoursWorked(record.hoursWorked) : <span className="text-[#9CA3AF]">—</span>}
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusDisplay.cls}`}>
+                            {statusDisplay.label}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          <button className="p-1 rounded-md hover:bg-[#F4F3FF] text-[#6B7280]" data-testid={`button-actions-${record.id}`}>
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Footer */}
+          {!historyLoading && filtered.length > 0 && (
+            <div className="px-5 py-3 border-t border-[#E5E3F3] text-xs text-[#6B7280]">
+              Showing 1–{Math.min(filtered.length, 20)} of {filtered.length}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }
