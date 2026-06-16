@@ -5,6 +5,7 @@
  * HR Employee Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { EmployeeRole } from './employeeRole';
 
 export interface Employee {
   id: number;
@@ -14,6 +15,7 @@ export interface Employee {
   position: string;
   joinDate: string;
   avatarInitials: string;
+  role: EmployeeRole;
   /** @nullable */
   phone?: string | null;
   /** @nullable */

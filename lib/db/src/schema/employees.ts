@@ -13,6 +13,11 @@ export const employeesTable = pgTable("employees", {
   phone: text("phone"),
   managerId: integer("manager_id"),
   managerName: text("manager_name"),
+  // Auth: "employee" (default) or "admin" — drives route guards and the
+  // role-based landing page on the frontend.
+  role: text("role").notNull().default("employee"),
+  // Auth: bcrypt hash of the user's password. Never returned by the API.
+  passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -9,6 +9,14 @@ export interface HealthStatus {
   status: string;
 }
 
+export type EmployeeRole = typeof EmployeeRole[keyof typeof EmployeeRole];
+
+
+export const EmployeeRole = {
+  employee: 'employee',
+  admin: 'admin',
+} as const;
+
 export interface Employee {
   id: number;
   name: string;
@@ -17,12 +25,18 @@ export interface Employee {
   position: string;
   joinDate: string;
   avatarInitials: string;
+  role: EmployeeRole;
   /** @nullable */
   phone?: string | null;
   /** @nullable */
   managerId?: number | null;
   /** @nullable */
   managerName?: string | null;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
 }
 
 export type AttendanceRecordStatus = typeof AttendanceRecordStatus[keyof typeof AttendanceRecordStatus];

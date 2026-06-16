@@ -1,10 +1,10 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { employeesTable, attendanceTable, leavesTable, holidaysTable, announcementsTable } from "@workspace/db";
+import { attendanceTable, leavesTable, holidaysTable, announcementsTable } from "@workspace/db";
 import { eq, and, asc, desc } from "drizzle-orm";
 import { format, subDays, startOfWeek } from "date-fns";
-
-const EMPLOYEE_ID = 1;
+import { requireAuth } from "../middlewares/auth";
+import { toPublicEmployee } from "../lib/employee";
 
 const LEAVE_ALLOWANCES: Record<string, number> = {
   annual: 21, sick: 10, casual: 7,
@@ -17,9 +17,9 @@ function getToday(): string {
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const router = Router();
+const router: IRouter = Router();
 
-router.get("/dashboard", async (req, res) => {
+router.get("/dashboard", requireAuth, async (req, res) => {
   try {
     const today = getToday();
     const now = new Date();
@@ -27,25 +27,21 @@ router.get("/dashboard", async (req, res) => {
     const month = now.getMonth() + 1;
     const monthPrefix = `${year}-${String(month).padStart(2, "0")}`;
 
-    // Employee
-    const employees = await db.select().from(employeesTable).limit(1);
-    const employee = employees[0];
-    if (!employee) {
-      res.status(404).json({ error: "Employee not found" });
-      return;
-    }
+    // Employee (the logged-in user)
+    const employeeId = req.user!.id;
+    const employee = toPublicEmployee(req.user!);
 
     // Today's attendance
     let todayAttendance = await db
       .select()
       .from(attendanceTable)
-      .where(and(eq(attendanceTable.employeeId, EMPLOYEE_ID), eq(attendanceTable.date, today)))
+      .where(and(eq(attendanceTable.employeeId, employeeId), eq(attendanceTable.date, today)))
       .then(r => r[0]);
 
     if (!todayAttendance) {
       const inserted = await db
         .insert(attendanceTable)
-        .values({ employeeId: EMPLOYEE_ID, date: today, status: "absent" })
+        .values({ employeeId: employeeId, date: today, status: "absent" })
         .returning();
       todayAttendance = inserted[0];
     }
@@ -54,7 +50,7 @@ router.get("/dashboard", async (req, res) => {
     const approvedLeaves = await db
       .select()
       .from(leavesTable)
-      .where(and(eq(leavesTable.employeeId, EMPLOYEE_ID), eq(leavesTable.status, "approved")));
+      .where(and(eq(leavesTable.employeeId, employeeId), eq(leavesTable.status, "approved")));
 
     const usedByType: Record<string, number> = {};
     for (const leave of approvedLeaves) {
@@ -91,7 +87,7 @@ router.get("/dashboard", async (req, res) => {
     const recentAttendance = await db
       .select()
       .from(attendanceTable)
-      .where(eq(attendanceTable.employeeId, EMPLOYEE_ID))
+      .where(eq(attendanceTable.employeeId, employeeId))
       .orderBy(desc(attendanceTable.date))
       .limit(10);
 
@@ -99,7 +95,7 @@ router.get("/dashboard", async (req, res) => {
     const monthAttendance = await db
       .select()
       .from(attendanceTable)
-      .where(eq(attendanceTable.employeeId, EMPLOYEE_ID))
+      .where(eq(attendanceTable.employeeId, employeeId))
       .then(r => r.filter(a => a.date.startsWith(monthPrefix)));
 
     const presentDays = monthAttendance.filter(a => a.status === "present" || a.status === "half_day").length;

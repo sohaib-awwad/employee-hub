@@ -9,6 +9,47 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Log in with email and password
+ */
+export const LoginBody = zod.object({
+  "email": zod.string(),
+  "password": zod.string()
+})
+
+export const LoginResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "department": zod.string(),
+  "position": zod.string(),
+  "joinDate": zod.string(),
+  "avatarInitials": zod.string(),
+  "role": zod.enum(['employee', 'admin']),
+  "phone": zod.string().nullish(),
+  "managerId": zod.number().nullish(),
+  "managerName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get the currently logged-in user
+ */
+export const GetCurrentUserResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "department": zod.string(),
+  "position": zod.string(),
+  "joinDate": zod.string(),
+  "avatarInitials": zod.string(),
+  "role": zod.enum(['employee', 'admin']),
+  "phone": zod.string().nullish(),
+  "managerId": zod.number().nullish(),
+  "managerName": zod.string().nullish()
+})
+
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -27,6 +68,7 @@ export const GetMyProfileResponse = zod.object({
   "position": zod.string(),
   "joinDate": zod.string(),
   "avatarInitials": zod.string(),
+  "role": zod.enum(['employee', 'admin']),
   "phone": zod.string().nullish(),
   "managerId": zod.number().nullish(),
   "managerName": zod.string().nullish()
@@ -193,6 +235,7 @@ export const GetDashboardResponse = zod.object({
   "position": zod.string(),
   "joinDate": zod.string(),
   "avatarInitials": zod.string(),
+  "role": zod.enum(['employee', 'admin']),
   "phone": zod.string().nullish(),
   "managerId": zod.number().nullish(),
   "managerName": zod.string().nullish()

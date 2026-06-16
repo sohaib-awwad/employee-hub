@@ -11,11 +11,13 @@ import {
   Sparkles,
   Plane,
   CalendarRange,
-  Pencil
+  Pencil,
+  LogOut
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useAuth } from "@/lib/auth";
 
 interface LayoutProps {
   children: ReactNode;
@@ -31,6 +33,7 @@ const NAV_ITEMS = [
 export default function Layout({ children }: LayoutProps) {
   const [location, setLocation] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { logout } = useAuth();
   const { data: profile, isLoading } = useGetMyProfile({
     query: { queryKey: getGetMyProfileQueryKey() }
   });
@@ -115,6 +118,16 @@ export default function Layout({ children }: LayoutProps) {
                 {profile?.avatarInitials}
               </AvatarFallback>
             </Avatar>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 text-[#6B7280] hover:text-[#1A1A2E]"
+              onClick={() => logout()}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4" />
+              Log out
+            </Button>
           </div>
         </header>
 
@@ -159,6 +172,14 @@ export default function Layout({ children }: LayoutProps) {
                   </Link>
                 );
               })}
+              <button
+                onClick={() => { setIsMobileMenuOpen(false); logout(); }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-[#6B7280] hover:bg-[#F4F3FF] w-full"
+                data-testid="button-logout-mobile"
+              >
+                <LogOut className="w-5 h-5" />
+                Log out
+              </button>
             </div>
           </div>
         )}

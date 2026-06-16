@@ -1,27 +1,13 @@
-import { Router } from "express";
-import { db } from "@workspace/db";
-import { employeesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { Router, type IRouter } from "express";
+import { requireAuth } from "../middlewares/auth";
+import { toPublicEmployee } from "../lib/employee";
 
-const router = Router();
+const router: IRouter = Router();
 
-router.get("/employees/me", async (req, res) => {
-  try {
-    const employee = await db
-      .select()
-      .from(employeesTable)
-      .limit(1);
-
-    if (!employee[0]) {
-      res.status(404).json({ error: "Employee not found" });
-      return;
-    }
-
-    res.json(employee[0]);
-  } catch (err) {
-    req.log.error({ err }, "Failed to get employee profile");
-    res.status(500).json({ error: "Internal server error" });
-  }
+// Returns the logged-in employee (previously returned the first row in the
+// table — now it is the authenticated user provided by requireAuth).
+router.get("/employees/me", requireAuth, (req, res) => {
+  res.json(toPublicEmployee(req.user!));
 });
 
 export default router;

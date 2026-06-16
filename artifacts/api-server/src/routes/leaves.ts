@@ -1,11 +1,10 @@
-import { Router } from "express";
+import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { leavesTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import { differenceInBusinessDays, parseISO, addDays } from "date-fns";
-
-const EMPLOYEE_ID = 1;
+import { requireAuth } from "../middlewares/auth";
 
 const LeaveInputSchema = z.object({
   type: z.enum(["annual", "sick", "casual", "maternity", "paternity", "unpaid", "other"]),
@@ -30,14 +29,18 @@ const LEAVE_ALLOWANCES: Record<string, number> = {
   other: 5,
 };
 
-const router = Router();
+const router: IRouter = Router();
+
+// Every leave route is scoped to the logged-in employee.
+router.use(requireAuth);
 
 router.get("/leaves", async (req, res) => {
   try {
+    const employeeId = req.user!.id;
     const leaves = await db
       .select()
       .from(leavesTable)
-      .where(eq(leavesTable.employeeId, EMPLOYEE_ID))
+      .where(eq(leavesTable.employeeId, employeeId))
       .orderBy(desc(leavesTable.createdAt));
     res.json(leaves);
   } catch (err) {
@@ -48,6 +51,7 @@ router.get("/leaves", async (req, res) => {
 
 router.post("/leaves", async (req, res) => {
   try {
+    const employeeId = req.user!.id;
     const parsed = LeaveInputSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ error: "Invalid input", details: parsed.error.issues });
@@ -65,7 +69,7 @@ router.post("/leaves", async (req, res) => {
     const inserted = await db
       .insert(leavesTable)
       .values({
-        employeeId: EMPLOYEE_ID,
+        employeeId,
         type,
         startDate,
         endDate,
@@ -84,12 +88,13 @@ router.post("/leaves", async (req, res) => {
 
 router.get("/leaves/balance", async (req, res) => {
   try {
+    const employeeId = req.user!.id;
     const leaves = await db
       .select()
       .from(leavesTable)
       .where(
         and(
-          eq(leavesTable.employeeId, EMPLOYEE_ID),
+          eq(leavesTable.employeeId, employeeId),
           eq(leavesTable.status, "approved")
         )
       );
@@ -121,6 +126,7 @@ router.get("/leaves/balance", async (req, res) => {
 
 router.delete("/leaves/:id", async (req, res) => {
   try {
+    const employeeId = req.user!.id;
     const id = parseInt(req.params.id);
     if (isNaN(id)) {
       res.status(400).json({ error: "Invalid ID" });
@@ -130,7 +136,7 @@ router.delete("/leaves/:id", async (req, res) => {
     const leave = await db
       .select()
       .from(leavesTable)
-      .where(and(eq(leavesTable.id, id), eq(leavesTable.employeeId, EMPLOYEE_ID)));
+      .where(and(eq(leavesTable.id, id), eq(leavesTable.employeeId, employeeId)));
 
     if (!leave[0]) {
       res.status(404).json({ error: "Leave not found" });
