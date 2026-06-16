@@ -413,6 +413,16 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
+    optionalDependencies:
+      '@rollup/rollup-win32-x64-msvc':
+        specifier: 4.60.3
+        version: 4.60.3
+      '@tailwindcss/oxide-win32-x64-msvc':
+        specifier: 4.3.0
+        version: 4.3.0
+      lightningcss-win32-x64-msvc:
+        specifier: 1.32.0
+        version: 1.32.0
 
   artifacts/mockup-sandbox:
     devDependencies:
@@ -1521,6 +1531,11 @@ packages:
     os: [linux]
     libc: [glibc]
 
+  '@rollup/rollup-win32-x64-msvc@4.60.3':
+    resolution: {integrity: sha512-hPt/bgL5cE+Qp+/TPHBqptcAgPzgj46mPcg/16zNUmbQk0j+mOEQV/+Lqu8QRtDV3Ek95Q6FeFITpuhl6OTsAA==}
+    cpu: [x64]
+    os: [win32]
+
   '@scalar/helpers@0.5.2':
     resolution: {integrity: sha512-Pi1GAl8jO6ungmGj2sjDfCfqiBNrKW6HXDZmminV94ybGU/KtRLOqHwd0n9FIhY3j0RYGpGC0VCuniCICfQPHg==}
     engines: {node: '>=22'}
@@ -1596,6 +1611,12 @@ packages:
       - '@tybys/wasm-util'
       - '@emnapi/wasi-threads'
       - tslib
+
+  '@tailwindcss/oxide-win32-x64-msvc@4.3.0':
+    resolution: {integrity: sha512-Mvrf2kXW/yeW/OTezZlCGOirXRcUuLIBx/5Y12BaPM7wJoryG6dfS/NJL8aBPqtTEx/Vm4T4vKzFUcKDT+TKUA==}
+    engines: {node: '>= 20'}
+    cpu: [x64]
+    os: [win32]
 
   '@tailwindcss/oxide@4.3.0':
     resolution: {integrity: sha512-F7HZGBeN9I0/AuuJS5PwcD8xayx5ri5GhjYUDBEVYUkexyA/giwbDNjRVrxSezE3T250OU2K/wp/ltWx3UOefg==}
@@ -2408,6 +2429,12 @@ packages:
     os: [linux]
     libc: [glibc]
 
+  lightningcss-win32-x64-msvc@1.32.0:
+    resolution: {integrity: sha512-Amq9B/SoZYdDi1kFrojnoqPLxYhQ4Wo5XiL8EVJrVsB8ARoC1PWW6VGtT0WKCemjy8aC+louJnjS7U18x3b06Q==}
+    engines: {node: '>= 12.0.0'}
+    cpu: [x64]
+    os: [win32]
+
   lightningcss@1.32.0:
     resolution: {integrity: sha512-NXYBzinNrblfraPGyrbPoD19C1h9lfI/1mzgWYvXUTe414Gz/X1FD2XBZSZM7rRTrMA8JL3OtAaGifrIKhQ5yQ==}
     engines: {node: '>= 12.0.0'}
@@ -2981,6 +3008,7 @@ packages:
   tsconfck@3.1.6:
     resolution: {integrity: sha512-ks6Vjr/jEw0P1gmOVwutM3B7fWxoWBL2KRDb1JfqGVawBmO5UsvmWOQFGHBPl5yxYz4eERr19E6L7NMv+Fej4w==}
     engines: {node: ^18 || >=20}
+    deprecated: unmaintained
     hasBin: true
     peerDependencies:
       typescript: ^5.0.0
@@ -4186,6 +4214,9 @@ snapshots:
   '@rollup/rollup-linux-x64-gnu@4.60.3':
     optional: true
 
+  '@rollup/rollup-win32-x64-msvc@4.60.3':
+    optional: true
+
   '@scalar/helpers@0.5.2': {}
 
   '@scalar/helpers@0.6.0': {}
@@ -4261,6 +4292,9 @@ snapshots:
     optional: true
 
   '@tailwindcss/oxide-wasm32-wasi@4.3.0':
+    optional: true
+
+  '@tailwindcss/oxide-win32-x64-msvc@4.3.0':
     optional: true
 
   '@tailwindcss/oxide@4.3.0':
@@ -4965,6 +4999,9 @@ snapshots:
   leven@4.1.0: {}
 
   lightningcss-linux-x64-gnu@1.32.0:
+    optional: true
+
+  lightningcss-win32-x64-msvc@1.32.0:
     optional: true
 
   lightningcss@1.32.0:

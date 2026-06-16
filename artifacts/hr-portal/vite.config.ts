@@ -66,6 +66,14 @@ export default defineConfig({
     fs: {
       strict: true,
     },
+    // Local dev: forward /api calls to the backend so the browser sees a single
+    // origin (on Replit the platform router already does this in production).
+    proxy: {
+      "/api": {
+        target: process.env.API_PROXY_TARGET ?? "http://localhost:5000",
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port,
