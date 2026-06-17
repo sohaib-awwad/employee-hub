@@ -5,6 +5,7 @@
  * HR Employee Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListAnnouncementsPriority } from './listAnnouncementsPriority';
 import type { ListAnnouncementsType } from './listAnnouncementsType';
 
 export type ListAnnouncementsParams = {
@@ -20,4 +21,12 @@ page?: number | null;
  * @nullable
  */
 limit?: number | null;
+/**
+ * @nullable
+ */
+priority?: ListAnnouncementsPriority;
+/**
+ * @nullable
+ */
+q?: string | null;
 };

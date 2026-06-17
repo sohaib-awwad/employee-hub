@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useGetDashboard, getGetDashboardQueryKey, usePunchIn, usePunchOut, getGetTodayAttendanceQueryKey, getListAnnouncementsQueryKey } from "@workspace/api-client-react";
+import { useGetDashboard, getGetDashboardQueryKey, usePunchIn, usePunchOut, getGetTodayAttendanceQueryKey, getListAnnouncementsQueryKey, useListAnnouncements } from "@workspace/api-client-react";
+import { RequestDialog } from "@/components/request-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -65,6 +66,18 @@ export default function Dashboard() {
     query: { queryKey: getGetDashboardQueryKey() }
   });
 
+  const [correctionOpen, setCorrectionOpen] = useState(false);
+  const [annTab, setAnnTab] = useState<"Announcements" | "Events">("Announcements");
+  const annParams = {
+    type: (annTab === "Events" ? "event" : "announcement") as "announcement" | "event",
+    page: 1,
+    limit: 3,
+  };
+  const { data: annData } = useListAnnouncements(annParams, {
+    query: { queryKey: getListAnnouncementsQueryKey(annParams) },
+  });
+  const tabItems = annData?.items ?? [];
+
   const punchIn = usePunchIn();
   const punchOut = usePunchOut();
 
@@ -123,7 +136,6 @@ export default function Dashboard() {
 
   const standardDay = 8 * 60;
   const progressPct = Math.min((workedMinutes / standardDay) * 100, 100);
-  const breakMinutes = 33;
   const remainingMinutes = Math.max(0, standardDay - workedMinutes);
   const extraMinutes = Math.max(0, workedMinutes - standardDay);
 
@@ -176,9 +188,6 @@ export default function Dashboard() {
                   {formatTimeStr(todayAttendance.punchIn!)}
                   {hasPunchedOut ? ` – ${formatTimeStr(todayAttendance.punchOut!)}` : " – Now"}
                 </span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" /> Remote
-                </span>
               </div>
             )}
 
@@ -191,9 +200,8 @@ export default function Dashboard() {
             </div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-4 mb-6">
               {[
-                { label: "BREAK", value: formatWorkedTime(breakMinutes) },
                 { label: "REMAINING", value: formatWorkedTime(remainingMinutes) },
                 { label: "EXTRA HOURS", value: `+${formatWorkedTime(extraMinutes)}` },
               ].map(({ label, value }) => (
@@ -230,7 +238,13 @@ export default function Dashboard() {
               ) : (
                 <span className="text-sm text-[#6B7280] font-medium">Day complete</span>
               )}
-              <button className="text-sm text-[#6C5CE7] hover:underline font-medium">Request Correction</button>
+              <button
+                onClick={() => setCorrectionOpen(true)}
+                className="text-sm text-[#6C5CE7] hover:underline font-medium"
+                data-testid="button-request-correction"
+              >
+                Request Correction
+              </button>
             </div>
           </CardContent>
         </Card>
@@ -362,10 +376,16 @@ export default function Dashboard() {
 
             {/* Tabs */}
             <div className="flex gap-0 border-b border-[#E5E3F3] mb-4">
-              {["Announcements", "Events"].map((tab) => (
+              {(["Announcements", "Events"] as const).map((tab) => (
                 <button
                   key={tab}
-                  className="px-4 pb-2 text-sm font-medium border-b-2 border-[#6C5CE7] text-[#6C5CE7] first-of-type:border-b-2 [&:not(:first-of-type)]:border-transparent [&:not(:first-of-type)]:text-[#6B7280]"
+                  onClick={() => setAnnTab(tab)}
+                  className={`px-4 pb-2 text-sm font-medium border-b-2 ${
+                    annTab === tab
+                      ? "border-[#6C5CE7] text-[#6C5CE7]"
+                      : "border-transparent text-[#6B7280] hover:text-[#1A1A2E]"
+                  }`}
+                  data-testid={`tab-${tab.toLowerCase()}`}
                 >
                   {tab}
                 </button>
@@ -373,7 +393,7 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-4">
-              {recentAnnouncements.map((a) => (
+              {tabItems.map((a) => (
                 <div key={a.id} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#F4F3FF] flex items-center justify-center shrink-0 mt-0.5">
                     <Bell className="w-3.5 h-3.5 text-[#6C5CE7]" />
@@ -394,10 +414,22 @@ export default function Dashboard() {
                   </div>
                 </div>
               ))}
+              {tabItems.length === 0 && (
+                <p className="text-sm text-[#6B7280] py-4 text-center">
+                  No {annTab.toLowerCase()} to show.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <RequestDialog
+        type="correction"
+        open={correctionOpen}
+        onOpenChange={setCorrectionOpen}
+        defaultDate={format(new Date(), "yyyy-MM-dd")}
+      />
     </motion.div>
   );
 }

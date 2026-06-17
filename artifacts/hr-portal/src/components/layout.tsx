@@ -1,6 +1,12 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useGetMyProfile, getGetMyProfileQueryKey } from "@workspace/api-client-react";
+import { parseISO, differenceInDays } from "date-fns";
+import {
+  useGetMyProfile,
+  getGetMyProfileQueryKey,
+  useListAnnouncements,
+  getListAnnouncementsQueryKey,
+} from "@workspace/api-client-react";
 import { 
   LayoutDashboard, 
   Clock, 
@@ -37,6 +43,15 @@ export default function Layout({ children }: LayoutProps) {
   const { data: profile, isLoading } = useGetMyProfile({
     query: { queryKey: getGetMyProfileQueryKey() }
   });
+
+  // Notification dot: lit when something was published in the last 7 days.
+  const annParams = { page: 1, limit: 5 };
+  const { data: annData } = useListAnnouncements(annParams, {
+    query: { queryKey: getListAnnouncementsQueryKey(annParams) },
+  });
+  const hasRecentAnnouncement = (annData?.items ?? []).some(
+    (a) => differenceInDays(new Date(), parseISO(a.publishedAt)) <= 7,
+  );
 
   return (
     <div className="flex h-screen bg-background">
@@ -109,9 +124,15 @@ export default function Layout({ children }: LayoutProps) {
         {/* Desktop Header */}
         <header className="hidden md:flex items-center justify-end px-8 py-4 bg-background">
           <div className="flex items-center gap-4">
-            <button className="relative p-2 text-[#6B7280] hover:text-[#1A1A2E] transition-colors rounded-full hover:bg-white">
+            <button
+              onClick={() => setLocation("/announcements")}
+              className="relative p-2 text-[#6B7280] hover:text-[#1A1A2E] transition-colors rounded-full hover:bg-white"
+              data-testid="button-notifications"
+            >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-background"></span>
+              {hasRecentAnnouncement && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-background"></span>
+              )}
             </button>
             <Avatar className="h-9 w-9">
               <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
@@ -140,9 +161,15 @@ export default function Layout({ children }: LayoutProps) {
             <span className="font-bold text-lg text-[#1A1A2E]">Olive</span>
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative p-1.5 text-[#6B7280]">
+            <button
+              onClick={() => setLocation("/announcements")}
+              className="relative p-1.5 text-[#6B7280]"
+              data-testid="button-notifications-mobile"
+            >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              {hasRecentAnnouncement && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+              )}
             </button>
             <Button variant="ghost" size="icon" className="text-[#1A1A2E]" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
               {isMobileMenuOpen ? <X /> : <Menu />}

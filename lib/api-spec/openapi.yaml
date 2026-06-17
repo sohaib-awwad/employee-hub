@@ -23,6 +23,8 @@ tags:
     description: Employee profile
   - name: announcements
     description: Announcements and events
+  - name: requests
+    description: Employee correction and attendance requests
 paths:
   /auth/login:
     post:
@@ -274,6 +276,15 @@ paths:
           in: query
           schema:
             type: ["integer", "null"]
+        - name: priority
+          in: query
+          schema:
+            type: ["string", "null"]
+            enum: [low, medium, high, null]
+        - name: q
+          in: query
+          schema:
+            type: ["string", "null"]
       responses:
         "200":
           description: Announcements list
@@ -281,6 +292,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AnnouncementsPage"
+
+  /requests:
+    get:
+      operationId: listRequests
+      tags: [requests]
+      summary: List the current employee's requests
+      responses:
+        "200":
+          description: Requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmployeeRequest"
+    post:
+      operationId: createRequest
+      tags: [requests]
+      summary: Submit a correction or attendance request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestInput"
+      responses:
+        "201":
+          description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeRequest"
 
 components:
   schemas:
@@ -460,7 +503,7 @@ components:
 
     AnnouncementsPage:
       type: object
-      required: [items, total, page, limit]
+      required: [items, total, page, limit, announcementCount, eventCount]
       properties:
         items:
           type: array
@@ -472,6 +515,45 @@ components:
           type: integer
         limit:
           type: integer
+        announcementCount:
+          type: integer
+        eventCount:
+          type: integer
+
+    EmployeeRequest:
+      type: object
+      required: [id, employeeId, type, reason, status, createdAt]
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        type:
+          type: string
+          enum: [correction, attendance]
+        date:
+          type: ["string", "null"]
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        comments:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    RequestInput:
+      type: object
+      required: [type, reason]
+      properties:
+        type:
+          type: string
+          enum: [correction, attendance]
+        date:
+          type: ["string", "null"]
+        reason:
+          type: string
 
     DashboardSummary:
       type: object

@@ -18,12 +18,20 @@ const PRIORITY_STYLE: Record<string, string> = {
 };
 
 export default function Announcements() {
-  const [activeType, setActiveType] = useState<"announcement" | "event" | undefined>(undefined);
+  const [activeType, setActiveType] = useState<"announcement" | "event">("announcement");
   const [page, setPage] = useState(1);
   const [priority, setPriority] = useState("all");
   const [search, setSearch] = useState("");
 
-  const params = { type: activeType, page, limit: PAGE_SIZE };
+  // Type, priority, and search are all applied server-side now, so pagination
+  // and the filters no longer fight each other.
+  const params = {
+    type: activeType,
+    page,
+    limit: PAGE_SIZE,
+    priority: priority === "all" ? undefined : (priority as "low" | "medium" | "high"),
+    q: search || undefined,
+  };
   const { data, isLoading } = useListAnnouncements(params, {
     query: { queryKey: getListAnnouncementsQueryKey(params) }
   });
@@ -32,18 +40,22 @@ export default function Announcements() {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  // Client-side filter for priority and search (since backend doesn't support these params)
-  const filtered = items.filter((a) => {
-    if (priority !== "all" && a.priority !== priority) return false;
-    if (search && !a.title.toLowerCase().includes(search.toLowerCase()) && !a.body.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
+  // Real per-type counts from the server (respect the active search/priority).
+  const announcementCount = data?.announcementCount ?? 0;
+  const eventCount = data?.eventCount ?? 0;
 
-  const announcementCount = total;
-  const eventCount = 0;
+  const handleTabChange = (type: "announcement" | "event") => {
+    setActiveType(type);
+    setPage(1);
+  };
 
-  const handleTabChange = (type: "announcement" | "event" | undefined) => {
-    setActiveType(type === activeType ? undefined : type);
+  const handlePriorityChange = (value: string) => {
+    setPriority(value);
+    setPage(1);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
     setPage(1);
   };
 
@@ -67,7 +79,7 @@ export default function Announcements() {
         <button
           onClick={() => handleTabChange("announcement")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-            activeType === "announcement" || activeType === undefined
+            activeType === "announcement"
               ? "bg-[#6C5CE7] text-white"
               : "bg-[#F4F3FF] text-[#6B7280] hover:bg-[#EDE9FE]"
           }`}
@@ -75,7 +87,7 @@ export default function Announcements() {
         >
           Announcements
           <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-            activeType === "announcement" || activeType === undefined ? "bg-white/20 text-white" : "bg-white text-[#6B7280]"
+            activeType === "announcement" ? "bg-white/20 text-white" : "bg-white text-[#6B7280]"
           }`}>
             {announcementCount}
           </span>
@@ -106,13 +118,13 @@ export default function Announcements() {
             className="pl-9 border-[#E5E3F3] bg-white text-sm"
             placeholder="Search announcements..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             data-testid="input-search-announcements"
           />
         </div>
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-[#6B7280]" />
-          <Select value={priority} onValueChange={setPriority}>
+          <Select value={priority} onValueChange={handlePriorityChange}>
             <SelectTrigger className="w-36 border-[#E5E3F3] bg-white text-sm" data-testid="select-priority-filter">
               <SelectValue placeholder="All Priority" />
             </SelectTrigger>
@@ -133,13 +145,13 @@ export default function Announcements() {
             <Skeleton key={i} className="h-48" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="text-center py-16 text-[#6B7280]">
           <p className="text-sm">No announcements found.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((a) => (
+          {items.map((a) => (
             <motion.div
               key={a.id}
               initial={{ opacity: 0, y: 8 }}

@@ -7,6 +7,7 @@ import leavesRouter from "./leaves";
 import holidaysRouter from "./holidays";
 import dashboardRouter from "./dashboard";
 import announcementsRouter from "./announcements";
+import requestsRouter from "./requests";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(leavesRouter);
 router.use(holidaysRouter);
 router.use(dashboardRouter);
 router.use(announcementsRouter);
+router.use(requestsRouter);
 
 export default router;

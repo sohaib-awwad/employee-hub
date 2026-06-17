@@ -12,4 +12,6 @@ export interface AnnouncementsPage {
   total: number;
   page: number;
   limit: number;
+  announcementCount: number;
+  eventCount: number;
 }

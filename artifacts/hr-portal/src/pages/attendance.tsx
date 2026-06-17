@@ -4,11 +4,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { RequestDialog } from "@/components/request-dialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { format, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Search, MoreVertical, Loader2 } from "lucide-react";
+import { Send, Search, MoreVertical, Loader2, PencilLine, ChevronLeft, ChevronRight } from "lucide-react";
+
+const PAGE_SIZE = 10;
 
 const formatTimeStr = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -45,6 +54,15 @@ export default function Attendance() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchDate, setSearchDate] = useState("");
+  const [page, setPage] = useState(1);
+  const [attendanceReqOpen, setAttendanceReqOpen] = useState(false);
+  const [correctionOpen, setCorrectionOpen] = useState(false);
+  const [correctionDate, setCorrectionDate] = useState<string | undefined>(undefined);
+
+  const openCorrection = (date: string) => {
+    setCorrectionDate(date);
+    setCorrectionOpen(true);
+  };
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
@@ -86,6 +104,18 @@ export default function Attendance() {
     return r.status === statusFilter;
   });
 
+  // Pagination over the filtered rows. Clamp the page so changing a filter
+  // never leaves us on an out-of-range page.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const paged = filtered.slice(pageStart, pageStart + PAGE_SIZE);
+
+  const setFilterAndReset = (fn: () => void) => {
+    fn();
+    setPage(1);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -99,7 +129,11 @@ export default function Attendance() {
           <h1 className="text-2xl font-bold text-[#1A1A2E]">Attendance</h1>
           <p className="text-sm text-[#6B7280] mt-0.5">Track your daily attendance, breaks, and work hours</p>
         </div>
-        <Button className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white gap-2 self-start sm:self-auto" data-testid="button-send-attendance-request">
+        <Button
+          className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white gap-2 self-start sm:self-auto"
+          onClick={() => setAttendanceReqOpen(true)}
+          data-testid="button-send-attendance-request"
+        >
           <Send className="w-4 h-4" />
           Send Attendance Request
         </Button>
@@ -149,7 +183,7 @@ export default function Attendance() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b border-[#E5E3F3]">
             <h2 className="text-base font-semibold text-[#1A1A2E]">My Attendance Summary</h2>
             <div className="flex flex-wrap gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(v) => setFilterAndReset(() => setStatusFilter(v))}>
                 <SelectTrigger className="w-36 text-sm border-[#E5E3F3] bg-white" data-testid="select-status-filter">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
@@ -169,7 +203,7 @@ export default function Attendance() {
                   className="pl-8 w-52 text-sm border-[#E5E3F3] bg-white"
                   placeholder="Search by date (e.g. 2026-01-01)"
                   value={searchDate}
-                  onChange={(e) => setSearchDate(e.target.value)}
+                  onChange={(e) => setFilterAndReset(() => setSearchDate(e.target.value))}
                   data-testid="input-search-date"
                 />
               </div>
@@ -206,7 +240,7 @@ export default function Attendance() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((record) => {
+                  paged.map((record) => {
                     const isToday = record.date === TODAY;
                     const statusDisplay = getStatusDisplay(record);
                     return (
@@ -239,9 +273,22 @@ export default function Attendance() {
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
-                          <button className="p-1 rounded-md hover:bg-[#F4F3FF] text-[#6B7280]" data-testid={`button-actions-${record.id}`}>
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 rounded-md hover:bg-[#F4F3FF] text-[#6B7280]" data-testid={`button-actions-${record.id}`}>
+                                <MoreVertical className="w-4 h-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => openCorrection(record.date)}
+                                data-testid={`action-request-correction-${record.id}`}
+                              >
+                                <PencilLine className="w-4 h-4 mr-2" />
+                                Request correction
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </td>
                       </tr>
                     );
@@ -251,14 +298,55 @@ export default function Attendance() {
             </table>
           </div>
 
-          {/* Footer */}
+          {/* Footer with real pagination */}
           {!historyLoading && filtered.length > 0 && (
-            <div className="px-5 py-3 border-t border-[#E5E3F3] text-xs text-[#6B7280]">
-              Showing 1–{Math.min(filtered.length, 20)} of {filtered.length}
+            <div className="flex items-center justify-between px-5 py-3 border-t border-[#E5E3F3] text-xs text-[#6B7280]">
+              <span>
+                Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7 border-[#E5E3F3]"
+                    disabled={currentPage === 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    data-testid="button-prev-page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="font-medium text-[#1A1A2E]">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7 border-[#E5E3F3]"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    data-testid="button-next-page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <RequestDialog
+        type="attendance"
+        open={attendanceReqOpen}
+        onOpenChange={setAttendanceReqOpen}
+      />
+      <RequestDialog
+        type="correction"
+        open={correctionOpen}
+        onOpenChange={setCorrectionOpen}
+        defaultDate={correctionDate}
+      />
     </motion.div>
   );
 }

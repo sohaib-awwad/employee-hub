@@ -191,6 +191,53 @@ export interface AnnouncementsPage {
   total: number;
   page: number;
   limit: number;
+  announcementCount: number;
+  eventCount: number;
+}
+
+export type EmployeeRequestType = typeof EmployeeRequestType[keyof typeof EmployeeRequestType];
+
+
+export const EmployeeRequestType = {
+  correction: 'correction',
+  attendance: 'attendance',
+} as const;
+
+export type EmployeeRequestStatus = typeof EmployeeRequestStatus[keyof typeof EmployeeRequestStatus];
+
+
+export const EmployeeRequestStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface EmployeeRequest {
+  id: number;
+  employeeId: number;
+  type: EmployeeRequestType;
+  /** @nullable */
+  date?: string | null;
+  reason: string;
+  status: EmployeeRequestStatus;
+  /** @nullable */
+  comments?: string | null;
+  createdAt: string;
+}
+
+export type RequestInputType = typeof RequestInputType[keyof typeof RequestInputType];
+
+
+export const RequestInputType = {
+  correction: 'correction',
+  attendance: 'attendance',
+} as const;
+
+export interface RequestInput {
+  type: RequestInputType;
+  /** @nullable */
+  date?: string | null;
+  reason: string;
 }
 
 export type DashboardSummaryMonthlyStats = {
@@ -248,6 +295,14 @@ page?: number | null;
  * @nullable
  */
 limit?: number | null;
+/**
+ * @nullable
+ */
+priority?: ListAnnouncementsPriority;
+/**
+ * @nullable
+ */
+q?: string | null;
 };
 
 export type ListAnnouncementsType = typeof ListAnnouncementsType[keyof typeof ListAnnouncementsType] | null;
@@ -256,5 +311,14 @@ export type ListAnnouncementsType = typeof ListAnnouncementsType[keyof typeof Li
 export const ListAnnouncementsType = {
   announcement: 'announcement',
   event: 'event',
+} as const;
+
+export type ListAnnouncementsPriority = typeof ListAnnouncementsPriority[keyof typeof ListAnnouncementsPriority] | null;
+
+
+export const ListAnnouncementsPriority = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
 } as const;
 

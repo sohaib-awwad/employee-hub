@@ -308,7 +308,9 @@ export const GetDashboardResponse = zod.object({
 export const ListAnnouncementsQueryParams = zod.object({
   "type": zod.union([zod.literal('announcement'),zod.literal('event'),zod.literal(null)]).nullish(),
   "page": zod.coerce.number().nullish(),
-  "limit": zod.coerce.number().nullish()
+  "limit": zod.coerce.number().nullish(),
+  "priority": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "q": zod.coerce.string().nullish()
 })
 
 export const ListAnnouncementsResponse = zod.object({
@@ -323,7 +325,35 @@ export const ListAnnouncementsResponse = zod.object({
 })),
   "total": zod.number(),
   "page": zod.number(),
-  "limit": zod.number()
+  "limit": zod.number(),
+  "announcementCount": zod.number(),
+  "eventCount": zod.number()
+})
+
+
+/**
+ * @summary List the current employee's requests
+ */
+export const ListRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "employeeId": zod.number(),
+  "type": zod.enum(['correction', 'attendance']),
+  "date": zod.string().nullish(),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "comments": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const ListRequestsResponse = zod.array(ListRequestsResponseItem)
+
+
+/**
+ * @summary Submit a correction or attendance request
+ */
+export const CreateRequestBody = zod.object({
+  "type": zod.enum(['correction', 'attendance']),
+  "date": zod.string().nullish(),
+  "reason": zod.string()
 })
 
 

@@ -24,6 +24,7 @@ import type {
   AttendanceRecord,
   DashboardSummary,
   Employee,
+  EmployeeRequest,
   HealthStatus,
   Holiday,
   LeaveBalance,
@@ -32,7 +33,8 @@ import type {
   ListAnnouncementsParams,
   ListAttendanceParams,
   ListHolidaysParams,
-  LoginInput
+  LoginInput,
+  RequestInput
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -1259,4 +1261,152 @@ export function useListAnnouncements<TData = Awaited<ReturnType<typeof listAnnou
 
 
 
+
+export const getListRequestsUrl = () => {
+
+
+
+
+  return `/api/requests`
+}
+
+/**
+ * @summary List the current employee's requests
+ */
+export const listRequests = async ( options?: RequestInit): Promise<EmployeeRequest[]> => {
+
+  return customFetch<EmployeeRequest[]>(getListRequestsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListRequestsQueryKey = () => {
+    return [
+    `/api/requests`
+    ] as const;
+    }
+
+
+export const getListRequestsQueryOptions = <TData = Awaited<ReturnType<typeof listRequests>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRequestsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRequests>>> = ({ signal }) => listRequests({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRequests>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListRequestsQueryResult = NonNullable<Awaited<ReturnType<typeof listRequests>>>
+export type ListRequestsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the current employee's requests
+ */
+
+export function useListRequests<TData = Awaited<ReturnType<typeof listRequests>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRequests>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListRequestsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateRequestUrl = () => {
+
+
+
+
+  return `/api/requests`
+}
+
+/**
+ * @summary Submit a correction or attendance request
+ */
+export const createRequest = async (requestInput: RequestInput, options?: RequestInit): Promise<EmployeeRequest> => {
+
+  return customFetch<EmployeeRequest>(getCreateRequestUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      requestInput,)
+  }
+);}
+
+
+
+
+export const getCreateRequestMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRequest>>, TError,{data: BodyType<RequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createRequest>>, TError,{data: BodyType<RequestInput>}, TContext> => {
+
+const mutationKey = ['createRequest'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRequest>>, {data: BodyType<RequestInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRequest(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRequestMutationResult = NonNullable<Awaited<ReturnType<typeof createRequest>>>
+    export type CreateRequestMutationBody = BodyType<RequestInput>
+    export type CreateRequestMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Submit a correction or attendance request
+ */
+export const useCreateRequest = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRequest>>, TError,{data: BodyType<RequestInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createRequest>>,
+        TError,
+        {data: BodyType<RequestInput>},
+        TContext
+      > => {
+      return useMutation(getCreateRequestMutationOptions(options));
+    }
 
