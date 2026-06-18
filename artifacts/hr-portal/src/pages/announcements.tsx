@@ -68,8 +68,8 @@ export default function Announcements() {
     >
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[#1A1A2E]">Announcements &amp; Events</h1>
-        <p className="text-sm text-[#6B7280] mt-0.5">
+        <h1 className="text-2xl font-bold text-foreground">Announcements &amp; Events</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
           {announcementCount} announcements · {eventCount} events
         </p>
       </div>
@@ -80,14 +80,14 @@ export default function Announcements() {
           onClick={() => handleTabChange("announcement")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
             activeType === "announcement"
-              ? "bg-[#6C5CE7] text-white"
-              : "bg-[#F4F3FF] text-[#6B7280] hover:bg-[#EDE9FE]"
+              ? "bg-primary text-white"
+              : "bg-accent/60 text-muted-foreground hover:bg-accent"
           }`}
           data-testid="tab-announcements"
         >
           Announcements
           <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-            activeType === "announcement" ? "bg-white/20 text-white" : "bg-white text-[#6B7280]"
+            activeType === "announcement" ? "bg-white/20 text-white" : "bg-card text-muted-foreground"
           }`}>
             {announcementCount}
           </span>
@@ -96,14 +96,14 @@ export default function Announcements() {
           onClick={() => handleTabChange("event")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
             activeType === "event"
-              ? "bg-[#6C5CE7] text-white"
-              : "bg-[#F4F3FF] text-[#6B7280] hover:bg-[#EDE9FE]"
+              ? "bg-primary text-white"
+              : "bg-accent/60 text-muted-foreground hover:bg-accent"
           }`}
           data-testid="tab-events"
         >
           Events
           <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-            activeType === "event" ? "bg-white/20 text-white" : "bg-white text-[#6B7280]"
+            activeType === "event" ? "bg-white/20 text-white" : "bg-card text-muted-foreground"
           }`}>
             {eventCount}
           </span>
@@ -113,9 +113,9 @@ export default function Announcements() {
       {/* Filter row */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            className="pl-9 border-[#E5E3F3] bg-white text-sm"
+            className="pl-9 border-border bg-card text-sm"
             placeholder="Search announcements..."
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
@@ -123,9 +123,9 @@ export default function Announcements() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-[#6B7280]" />
+          <Filter className="w-4 h-4 text-muted-foreground" />
           <Select value={priority} onValueChange={handlePriorityChange}>
-            <SelectTrigger className="w-36 border-[#E5E3F3] bg-white text-sm" data-testid="select-priority-filter">
+            <SelectTrigger className="w-36 border-border bg-card text-sm" data-testid="select-priority-filter">
               <SelectValue placeholder="All Priority" />
             </SelectTrigger>
             <SelectContent>
@@ -146,7 +146,7 @@ export default function Announcements() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="text-center py-16 text-[#6B7280]">
+        <div className="text-center py-16 text-muted-foreground">
           <p className="text-sm">No announcements found.</p>
         </div>
       ) : (
@@ -158,22 +158,22 @@ export default function Announcements() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="border-[#E5E3F3] shadow-sm hover:shadow-md transition-shadow h-full" data-testid={`card-announcement-${a.id}`}>
+              <Card className="border-border shadow-sm hover:shadow-md transition-shadow h-full" data-testid={`card-announcement-${a.id}`}>
                 <CardContent className="p-5 flex flex-col h-full">
-                  <h3 className="font-bold text-[#1A1A2E] text-sm leading-snug mb-2 line-clamp-2">
+                  <h3 className="font-bold text-foreground text-sm leading-snug mb-2 line-clamp-2">
                     {a.title}
                   </h3>
-                  <p className="text-xs text-[#6B7280] leading-relaxed flex-1 line-clamp-4">
+                  <p className="text-xs text-muted-foreground leading-relaxed flex-1 line-clamp-4">
                     {a.body}
                   </p>
                   <div className="flex items-center gap-2 mt-4 flex-wrap">
-                    <span className="text-[10px] border border-[#E5E3F3] text-[#6B7280] px-2 py-0.5 rounded font-medium">
+                    <span className="text-[10px] border border-border text-muted-foreground px-2 py-0.5 rounded font-medium">
                       {a.category}
                     </span>
                     <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${PRIORITY_STYLE[a.priority] ?? "bg-gray-100 text-gray-500"}`}>
                       {a.priority.charAt(0).toUpperCase() + a.priority.slice(1)}
                     </span>
-                    <span className="ml-auto text-[10px] text-[#9CA3AF]">
+                    <span className="ml-auto text-[10px] text-muted-foreground">
                       {format(parseISO(a.publishedAt), "MMM d")}
                     </span>
                   </div>
@@ -187,14 +187,14 @@ export default function Announcements() {
       {/* Pagination */}
       {!isLoading && totalPages > 1 && (
         <div className="flex items-center justify-between pt-2">
-          <p className="text-sm text-[#6B7280]">
+          <p className="text-sm text-muted-foreground">
             Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
           </p>
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 border-[#E5E3F3]"
+              className="h-8 w-8 border-border"
               disabled={page === 1}
               onClick={() => setPage(p => p - 1)}
               data-testid="button-prev-page"
@@ -206,7 +206,7 @@ export default function Announcements() {
                 key={p}
                 variant={p === page ? "default" : "outline"}
                 size="icon"
-                className={`h-8 w-8 text-xs ${p === page ? "bg-[#6C5CE7] hover:bg-[#5A4FCF] border-[#6C5CE7]" : "border-[#E5E3F3] text-[#6B7280]"}`}
+                className={`h-8 w-8 text-xs ${p === page ? "bg-primary hover:bg-primary/90 border-primary" : "border-border text-muted-foreground"}`}
                 onClick={() => setPage(p)}
                 data-testid={`button-page-${p}`}
               >
@@ -216,7 +216,7 @@ export default function Announcements() {
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 border-[#E5E3F3]"
+              className="h-8 w-8 border-border"
               disabled={page === totalPages}
               onClick={() => setPage(p => p + 1)}
               data-testid="button-next-page"

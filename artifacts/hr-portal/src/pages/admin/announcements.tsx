@@ -115,13 +115,13 @@ export default function AdminAnnouncements() {
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-[#FAFAFA]">
+              <tr className="border-b border-border bg-muted/50">
                 {["Title", "Type", "Category", "Priority", "Published", "Actions"].map((c) => (
-                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{c}</th>
+                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{c}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F4F3FF]">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i}>{Array.from({ length: 6 }).map((_, j) => <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-20" /></td>)}</tr>
@@ -130,15 +130,15 @@ export default function AdminAnnouncements() {
                 <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">No announcements yet.</td></tr>
               ) : (
                 items.map((a) => (
-                  <tr key={a.id} className="hover:bg-[#FAFAFA]" data-testid={`row-announcement-${a.id}`}>
+                  <tr key={a.id} className="hover:bg-muted/50" data-testid={`row-announcement-${a.id}`}>
                     <td className="px-5 py-3.5 font-medium text-foreground max-w-[240px] truncate" title={a.title}>{a.title}</td>
-                    <td className="px-5 py-3.5 capitalize text-[#6B7280]">{a.type}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">{a.category}</td>
+                    <td className="px-5 py-3.5 capitalize text-muted-foreground">{a.type}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground">{a.category}</td>
                     <td className="px-5 py-3.5"><span className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${PRIORITY_STYLE[a.priority]}`}>{a.priority}</span></td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">{format(parseISO(a.publishedAt), "MMM d, yyyy")}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground">{format(parseISO(a.publishedAt), "MMM d, yyyy")}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-[#6B7280]" onClick={() => openEdit(a)} data-testid={`button-edit-${a.id}`}><Pencil className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={() => openEdit(a)} data-testid={`button-edit-${a.id}`}><Pencil className="w-4 h-4" /></Button>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600 hover:bg-red-50" onClick={() => onDelete(a)} data-testid={`button-delete-${a.id}`}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </td>

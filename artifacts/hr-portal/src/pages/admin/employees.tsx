@@ -120,13 +120,13 @@ export default function AdminEmployees() {
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-[#FAFAFA]">
+              <tr className="border-b border-border bg-muted/50">
                 {["Name", "Email", "Department", "Position", "Role", "Actions"].map((c) => (
-                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{c}</th>
+                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{c}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F4F3FF]">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <tr key={i}>{Array.from({ length: 6 }).map((_, j) => <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-20" /></td>)}</tr>
@@ -135,16 +135,16 @@ export default function AdminEmployees() {
                 <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">No employees.</td></tr>
               ) : (
                 rows.map((e) => (
-                  <tr key={e.id} className="hover:bg-[#FAFAFA]" data-testid={`row-employee-${e.id}`}>
+                  <tr key={e.id} className="hover:bg-muted/50" data-testid={`row-employee-${e.id}`}>
                     <td className="px-5 py-3.5 font-medium text-foreground">{e.name}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">{e.email}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">{e.department}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">{e.position}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground">{e.email}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground">{e.department}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground">{e.position}</td>
                     <td className="px-5 py-3.5">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${e.role === "admin" ? "bg-[#EDE9FE] text-[#6C5CE7]" : "bg-gray-100 text-gray-600"}`}>{e.role}</span>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded capitalize ${e.role === "admin" ? "bg-accent text-primary" : "bg-gray-100 text-gray-600"}`}>{e.role}</span>
                     </td>
                     <td className="px-5 py-3.5">
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-[#6B7280]" onClick={() => openEdit(e)} data-testid={`button-edit-${e.id}`}><Pencil className="w-4 h-4" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={() => openEdit(e)} data-testid={`button-edit-${e.id}`}><Pencil className="w-4 h-4" /></Button>
                     </td>
                   </tr>
                 ))

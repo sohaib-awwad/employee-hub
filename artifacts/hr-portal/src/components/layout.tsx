@@ -23,6 +23,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
 
 interface LayoutProps {
@@ -62,7 +63,7 @@ export default function Layout({ children }: LayoutProps) {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="shrink-0">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-4H7l5-8v4h4l-5 8z" fill="#22C55E"/>
           </svg>
-          <span className="font-bold text-xl tracking-tight text-[#1A1A2E]">Olive</span>
+          <span className="font-bold text-xl tracking-tight text-foreground">Olive</span>
         </div>
 
         {/* User Profile Card */}
@@ -83,10 +84,10 @@ export default function Layout({ children }: LayoutProps) {
                 </AvatarFallback>
               </Avatar>
               <div className="overflow-hidden">
-                <p className="text-sm font-semibold text-[#1A1A2E] truncate">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {profile.name}
                 </p>
-                <p className="text-xs text-[#6B7280] truncate font-medium">
+                <p className="text-xs text-muted-foreground truncate font-medium">
                   {profile.position}
                 </p>
               </div>
@@ -104,14 +105,14 @@ export default function Layout({ children }: LayoutProps) {
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all relative ${
                   isActive 
-                    ? "bg-[#EDE9FE] text-[#6C5CE7]" 
-                    : "text-[#6B7280] hover:bg-[#F4F3FF] hover:text-[#1A1A2E]"
+                    ? "bg-accent text-primary" 
+                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                 }`}
               >
                 {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#6C5CE7] rounded-r-md" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary rounded-r-md" />
                 )}
-                <item.icon className={`w-5 h-5 ${isActive ? "text-[#6C5CE7]" : ""}`} />
+                <item.icon className={`w-5 h-5 ${isActive ? "text-primary" : ""}`} />
                 {item.label}
               </Link>
             );
@@ -124,9 +125,10 @@ export default function Layout({ children }: LayoutProps) {
         {/* Desktop Header */}
         <header className="hidden md:flex items-center justify-end px-8 py-4 bg-background">
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <button
               onClick={() => setLocation("/announcements")}
-              className="relative p-2 text-[#6B7280] hover:text-[#1A1A2E] transition-colors rounded-full hover:bg-white"
+              className="relative p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-accent"
               data-testid="button-notifications"
             >
               <Bell className="w-5 h-5" />
@@ -142,7 +144,7 @@ export default function Layout({ children }: LayoutProps) {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 text-[#6B7280] hover:text-[#1A1A2E]"
+              className="gap-2 text-muted-foreground hover:text-foreground"
               onClick={() => logout()}
               data-testid="button-logout"
             >
@@ -153,17 +155,18 @@ export default function Layout({ children }: LayoutProps) {
         </header>
 
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-white border-b border-sidebar-border z-20">
+        <header className="md:hidden flex items-center justify-between p-4 bg-card border-b border-sidebar-border z-20">
           <div className="flex items-center gap-2">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="shrink-0">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-4H7l5-8v4h4l-5 8z" fill="#22C55E"/>
             </svg>
-            <span className="font-bold text-lg text-[#1A1A2E]">Olive</span>
+            <span className="font-bold text-lg text-foreground">Olive</span>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <button
               onClick={() => setLocation("/announcements")}
-              className="relative p-1.5 text-[#6B7280]"
+              className="relative p-1.5 text-muted-foreground"
               data-testid="button-notifications-mobile"
             >
               <Bell className="w-5 h-5" />
@@ -171,7 +174,7 @@ export default function Layout({ children }: LayoutProps) {
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               )}
             </button>
-            <Button variant="ghost" size="icon" className="text-[#1A1A2E]" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <Button variant="ghost" size="icon" className="text-foreground" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
               {isMobileMenuOpen ? <X /> : <Menu />}
             </Button>
           </div>
@@ -179,7 +182,7 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Mobile Drawer Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden absolute inset-0 top-[65px] bg-white z-10 p-4">
+          <div className="md:hidden absolute inset-0 top-[65px] bg-card z-10 p-4">
             <div className="space-y-1">
               {NAV_ITEMS.map((item) => {
                 const isActive = location === item.href;
@@ -190,8 +193,8 @@ export default function Layout({ children }: LayoutProps) {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium transition-all ${
                       isActive 
-                        ? "bg-[#EDE9FE] text-[#6C5CE7]" 
-                        : "text-[#6B7280] hover:bg-[#F4F3FF]"
+                        ? "bg-accent text-primary" 
+                        : "text-muted-foreground hover:bg-accent/60"
                     }`}
                   >
                     <item.icon className="w-5 h-5" />
@@ -201,7 +204,7 @@ export default function Layout({ children }: LayoutProps) {
               })}
               <button
                 onClick={() => { setIsMobileMenuOpen(false); logout(); }}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-[#6B7280] hover:bg-[#F4F3FF] w-full"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-muted-foreground hover:bg-accent/60 w-full"
                 data-testid="button-logout-mobile"
               >
                 <LogOut className="w-5 h-5" />
@@ -220,21 +223,21 @@ export default function Layout({ children }: LayoutProps) {
         <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl bg-[#6C5CE7] hover:bg-[#5A4FCF] p-0">
+              <Button className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl bg-primary hover:bg-primary/90 p-0">
                 <Sparkles className="h-6 w-6 text-white" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-2 rounded-xl border-[#E5E3F3] shadow-xl" sideOffset={16}>
+            <PopoverContent align="end" className="w-56 p-2 rounded-xl border-border shadow-xl" sideOffset={16}>
               <div className="flex flex-col space-y-1">
-                <Button variant="ghost" className="justify-start px-3 text-[#1A1A2E] hover:bg-[#F4F3FF] hover:text-[#6C5CE7]" onClick={() => setLocation('/leave-requests')}>
+                <Button variant="ghost" className="justify-start px-3 text-foreground hover:bg-accent/60 hover:text-primary" onClick={() => setLocation('/leave-requests')}>
                   <Plane className="mr-2 h-4 w-4" />
                   Apply Leave
                 </Button>
-                <Button variant="ghost" className="justify-start px-3 text-[#1A1A2E] hover:bg-[#F4F3FF] hover:text-[#6C5CE7]" onClick={() => setLocation('/attendance')}>
+                <Button variant="ghost" className="justify-start px-3 text-foreground hover:bg-accent/60 hover:text-primary" onClick={() => setLocation('/attendance')}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Request Correction
                 </Button>
-                <Button variant="ghost" className="justify-start px-3 text-[#1A1A2E] hover:bg-[#F4F3FF] hover:text-[#6C5CE7]">
+                <Button variant="ghost" className="justify-start px-3 text-foreground hover:bg-accent/60 hover:text-primary">
                   <CalendarRange className="mr-2 h-4 w-4" />
                   View Holidays
                 </Button>
@@ -244,7 +247,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Mobile Bottom Nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-[#E5E3F3] flex items-center justify-around px-2 py-2 pb-safe z-40">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex items-center justify-around px-2 py-2 pb-safe z-40">
           {NAV_ITEMS.map((item) => {
             const isActive = location === item.href;
             return (
@@ -252,7 +255,7 @@ export default function Layout({ children }: LayoutProps) {
                 key={item.href} 
                 href={item.href}
                 className={`flex flex-col items-center justify-center p-2 min-w-[64px] ${
-                  isActive ? "text-[#6C5CE7]" : "text-[#6B7280]"
+                  isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
                 <item.icon className="w-6 h-6 mb-1" />

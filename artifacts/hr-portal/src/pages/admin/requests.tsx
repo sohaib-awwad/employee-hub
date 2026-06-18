@@ -68,7 +68,7 @@ export default function AdminRequests() {
             key={t}
             onClick={() => setTab(t)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize ${
-              tab === t ? "bg-[#6C5CE7] text-white" : "bg-[#F4F3FF] text-[#6B7280] hover:bg-[#EDE9FE]"
+              tab === t ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
             }`}
             data-testid={`tab-${t}`}
           >
@@ -81,13 +81,13 @@ export default function AdminRequests() {
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-[#FAFAFA]">
+              <tr className="border-b border-border bg-muted/50">
                 {["Employee", "Type", "Date", "Reason", "Status", "Actions"].map((c) => (
-                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{c}</th>
+                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{c}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F4F3FF]">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i}>{Array.from({ length: 6 }).map((_, j) => <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-20" /></td>)}</tr>
@@ -96,11 +96,11 @@ export default function AdminRequests() {
                 <tr><td colSpan={6} className="px-5 py-12 text-center text-muted-foreground">No {tab === "all" ? "" : tab} requests.</td></tr>
               ) : (
                 rows.map((r) => (
-                  <tr key={r.id} className="hover:bg-[#FAFAFA]" data-testid={`row-request-${r.id}`}>
+                  <tr key={r.id} className="hover:bg-muted/50" data-testid={`row-request-${r.id}`}>
                     <td className="px-5 py-3.5 font-medium text-foreground">{r.employeeName ?? `#${r.employeeId}`}</td>
-                    <td className="px-5 py-3.5 capitalize text-[#6B7280]">{r.type}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">{r.date ? format(parseISO(r.date), "MMM d, yyyy") : "—"}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280] max-w-[260px] truncate" title={r.reason}>{r.reason}</td>
+                    <td className="px-5 py-3.5 capitalize text-muted-foreground">{r.type}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground">{r.date ? format(parseISO(r.date), "MMM d, yyyy") : "—"}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground max-w-[260px] truncate" title={r.reason}>{r.reason}</td>
                     <td className="px-5 py-3.5">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_STYLE[r.status]}`}>{r.status}</span>
                     </td>
@@ -115,7 +115,7 @@ export default function AdminRequests() {
                           </Button>
                         </div>
                       ) : (
-                        <span className="text-xs text-[#9CA3AF]">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
                   </tr>

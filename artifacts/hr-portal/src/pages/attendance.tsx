@@ -44,7 +44,7 @@ const getStatusDisplay = (record: { status: string; hoursWorked?: number | null 
   if (status === "absent") return { label: "Absent", cls: "bg-red-100 text-red-700" };
   if (status === "half_day") return { label: "Partial", cls: "bg-amber-100 text-amber-700" };
   if (status === "holiday") return { label: "Holiday", cls: "bg-purple-100 text-purple-700" };
-  if (hoursWorked && hoursWorked > 8) return { label: "Extra Hours", cls: "bg-[#EDE9FE] text-[#6C5CE7]" };
+  if (hoursWorked && hoursWorked > 8) return { label: "Extra Hours", cls: "bg-accent text-primary" };
   return { label: "Present", cls: "bg-green-100 text-green-700" };
 };
 
@@ -126,11 +126,11 @@ export default function Attendance() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1A1A2E]">Attendance</h1>
-          <p className="text-sm text-[#6B7280] mt-0.5">Track your daily attendance, breaks, and work hours</p>
+          <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Track your daily attendance, breaks, and work hours</p>
         </div>
         <Button
-          className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white gap-2 self-start sm:self-auto"
+          className="bg-primary hover:bg-primary/90 text-white gap-2 self-start sm:self-auto"
           onClick={() => setAttendanceReqOpen(true)}
           data-testid="button-send-attendance-request"
         >
@@ -141,11 +141,11 @@ export default function Attendance() {
 
       {/* Punch in/out quick card if today not done */}
       {!todayLoading && todayRecord && !todayRecord.punchIn && (
-        <Card className="border-[#E5E3F3] bg-[#F8F7FF]">
+        <Card className="border-border bg-accent/40">
           <CardContent className="p-4 flex items-center justify-between gap-4">
-            <p className="text-sm font-medium text-[#1A1A2E]">You haven't punched in today yet.</p>
+            <p className="text-sm font-medium text-foreground">You haven't punched in today yet.</p>
             <Button
-              className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white gap-2"
+              className="bg-primary hover:bg-primary/90 text-white gap-2"
               onClick={handlePunchIn}
               disabled={punchIn.isPending}
               data-testid="button-punch-in"
@@ -164,7 +164,7 @@ export default function Attendance() {
             </p>
             <Button
               variant="outline"
-              className="border-[#6C5CE7] text-[#6C5CE7] hover:bg-[#EDE9FE] gap-2"
+              className="border-primary text-primary hover:bg-accent gap-2"
               onClick={handlePunchOut}
               disabled={punchOut.isPending}
               data-testid="button-punch-out"
@@ -177,14 +177,14 @@ export default function Attendance() {
       )}
 
       {/* Attendance Summary Table */}
-      <Card className="border-[#E5E3F3] shadow-sm overflow-hidden">
+      <Card className="border-border shadow-sm overflow-hidden">
         <CardContent className="p-0">
           {/* Table header row */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b border-[#E5E3F3]">
-            <h2 className="text-base font-semibold text-[#1A1A2E]">My Attendance Summary</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b border-border">
+            <h2 className="text-base font-semibold text-foreground">My Attendance Summary</h2>
             <div className="flex flex-wrap gap-2">
               <Select value={statusFilter} onValueChange={(v) => setFilterAndReset(() => setStatusFilter(v))}>
-                <SelectTrigger className="w-36 text-sm border-[#E5E3F3] bg-white" data-testid="select-status-filter">
+                <SelectTrigger className="w-36 text-sm border-border bg-card" data-testid="select-status-filter">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,9 +198,9 @@ export default function Attendance() {
                 </SelectContent>
               </Select>
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <Input
-                  className="pl-8 w-52 text-sm border-[#E5E3F3] bg-white"
+                  className="pl-8 w-52 text-sm border-border bg-card"
                   placeholder="Search by date (e.g. 2026-01-01)"
                   value={searchDate}
                   onChange={(e) => setFilterAndReset(() => setSearchDate(e.target.value))}
@@ -214,15 +214,15 @@ export default function Attendance() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#E5E3F3] bg-[#FAFAFA]">
+                <tr className="border-b border-border bg-muted/50">
                   {["Date", "Day", "Punch In", "Punch Out", "Total Worked", "Status", "Actions"].map((col) => (
-                    <th key={col} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">
+                    <th key={col} className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       {col}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F4F3FF]">
+              <tbody className="divide-y divide-border">
                 {historyLoading ? (
                   Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i}>
@@ -235,7 +235,7 @@ export default function Attendance() {
                   ))
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-5 py-14 text-center text-[#6B7280] text-sm">
+                    <td colSpan={7} className="px-5 py-14 text-center text-muted-foreground text-sm">
                       No attendance records found.
                     </td>
                   </tr>
@@ -244,28 +244,28 @@ export default function Attendance() {
                     const isToday = record.date === TODAY;
                     const statusDisplay = getStatusDisplay(record);
                     return (
-                      <tr key={record.id} className="hover:bg-[#FAFAFA] transition-colors" data-testid={`row-attendance-${record.id}`}>
+                      <tr key={record.id} className="hover:bg-muted/50 transition-colors" data-testid={`row-attendance-${record.id}`}>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-[#1A1A2E]">
+                            <span className="font-medium text-foreground">
                               {format(parseISO(record.date), "MMM d, yyyy")}
                             </span>
                             {isToday && (
-                              <span className="text-[10px] bg-[#EDE9FE] text-[#6C5CE7] px-2 py-0.5 rounded-full font-semibold">
+                              <span className="text-[10px] bg-accent text-primary px-2 py-0.5 rounded-full font-semibold">
                                 Today
                               </span>
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-3.5 text-[#6B7280]">{getDayName(record.date)}</td>
-                        <td className="px-5 py-3.5 text-[#1A1A2E]">
-                          {record.punchIn ? formatTimeStr(record.punchIn) : <span className="text-[#9CA3AF]">--</span>}
+                        <td className="px-5 py-3.5 text-muted-foreground">{getDayName(record.date)}</td>
+                        <td className="px-5 py-3.5 text-foreground">
+                          {record.punchIn ? formatTimeStr(record.punchIn) : <span className="text-muted-foreground">--</span>}
                         </td>
-                        <td className="px-5 py-3.5 text-[#1A1A2E]">
-                          {record.punchOut ? formatTimeStr(record.punchOut) : <span className="text-[#9CA3AF]">--</span>}
+                        <td className="px-5 py-3.5 text-foreground">
+                          {record.punchOut ? formatTimeStr(record.punchOut) : <span className="text-muted-foreground">--</span>}
                         </td>
-                        <td className="px-5 py-3.5 font-medium text-[#1A1A2E] tabular-nums">
-                          {record.hoursWorked ? formatHoursWorked(record.hoursWorked) : <span className="text-[#9CA3AF]">—</span>}
+                        <td className="px-5 py-3.5 font-medium text-foreground tabular-nums">
+                          {record.hoursWorked ? formatHoursWorked(record.hoursWorked) : <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="px-5 py-3.5">
                           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusDisplay.cls}`}>
@@ -275,7 +275,7 @@ export default function Attendance() {
                         <td className="px-5 py-3.5">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button className="p-1 rounded-md hover:bg-[#F4F3FF] text-[#6B7280]" data-testid={`button-actions-${record.id}`}>
+                              <button className="p-1 rounded-md hover:bg-accent/60 text-muted-foreground" data-testid={`button-actions-${record.id}`}>
                                 <MoreVertical className="w-4 h-4" />
                               </button>
                             </DropdownMenuTrigger>
@@ -300,7 +300,7 @@ export default function Attendance() {
 
           {/* Footer with real pagination */}
           {!historyLoading && filtered.length > 0 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-[#E5E3F3] text-xs text-[#6B7280]">
+            <div className="flex items-center justify-between px-5 py-3 border-t border-border text-xs text-muted-foreground">
               <span>
                 Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} of {filtered.length}
               </span>
@@ -309,20 +309,20 @@ export default function Attendance() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-7 w-7 border-[#E5E3F3]"
+                    className="h-7 w-7 border-border"
                     disabled={currentPage === 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     data-testid="button-prev-page"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
-                  <span className="font-medium text-[#1A1A2E]">
+                  <span className="font-medium text-foreground">
                     {currentPage} / {totalPages}
                   </span>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-7 w-7 border-[#E5E3F3]"
+                    className="h-7 w-7 border-border"
                     disabled={currentPage === totalPages}
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     data-testid="button-next-page"

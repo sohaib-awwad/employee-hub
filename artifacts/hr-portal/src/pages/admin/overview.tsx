@@ -11,7 +11,7 @@ export default function AdminOverview() {
   const cards = [
     { label: "Pending leave approvals", value: data?.pendingLeaves ?? 0, icon: CalendarCheck, href: "/admin/leaves", accent: "text-amber-600 bg-amber-100" },
     { label: "Pending requests", value: data?.pendingRequests ?? 0, icon: Inbox, href: "/admin/requests", accent: "text-blue-600 bg-blue-100" },
-    { label: "Employees", value: data?.totalEmployees ?? 0, icon: Users, href: "/admin/employees", accent: "text-[#6C5CE7] bg-[#EDE9FE]" },
+    { label: "Employees", value: data?.totalEmployees ?? 0, icon: Users, href: "/admin/employees", accent: "text-primary bg-accent" },
     { label: "Announcements", value: data?.totalAnnouncements ?? 0, icon: Megaphone, href: "/admin/announcements", accent: "text-green-600 bg-green-100" },
   ];
 

@@ -69,7 +69,7 @@ export default function AdminLeaves() {
             key={t}
             onClick={() => setTab(t)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize ${
-              tab === t ? "bg-[#6C5CE7] text-white" : "bg-[#F4F3FF] text-[#6B7280] hover:bg-[#EDE9FE]"
+              tab === t ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
             }`}
             data-testid={`tab-${t}`}
           >
@@ -82,13 +82,13 @@ export default function AdminLeaves() {
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-[#FAFAFA]">
+              <tr className="border-b border-border bg-muted/50">
                 {["Employee", "Type", "Dates", "Days", "Reason", "Status", "Actions"].map((c) => (
-                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{c}</th>
+                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{c}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F4F3FF]">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <tr key={i}>{Array.from({ length: 7 }).map((_, j) => <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-20" /></td>)}</tr>
@@ -97,14 +97,14 @@ export default function AdminLeaves() {
                 <tr><td colSpan={7} className="px-5 py-12 text-center text-muted-foreground">No {tab === "all" ? "" : tab} leave requests.</td></tr>
               ) : (
                 rows.map((l) => (
-                  <tr key={l.id} className="hover:bg-[#FAFAFA]" data-testid={`row-leave-${l.id}`}>
+                  <tr key={l.id} className="hover:bg-muted/50" data-testid={`row-leave-${l.id}`}>
                     <td className="px-5 py-3.5 font-medium text-foreground">{l.employeeName ?? "Unknown"}</td>
-                    <td className="px-5 py-3.5 capitalize text-[#6B7280]">{l.type}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">
+                    <td className="px-5 py-3.5 capitalize text-muted-foreground">{l.type}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground">
                       {format(parseISO(l.startDate), "MMM d")} – {format(parseISO(l.endDate), "MMM d, yyyy")}
                     </td>
                     <td className="px-5 py-3.5 text-foreground">{l.days}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280] max-w-[220px] truncate" title={l.reason}>{l.reason}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground max-w-[220px] truncate" title={l.reason}>{l.reason}</td>
                     <td className="px-5 py-3.5">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_STYLE[l.status]}`}>{l.status}</span>
                     </td>
@@ -119,7 +119,7 @@ export default function AdminLeaves() {
                           </Button>
                         </div>
                       ) : (
-                        <span className="text-xs text-[#9CA3AF]">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </td>
                   </tr>

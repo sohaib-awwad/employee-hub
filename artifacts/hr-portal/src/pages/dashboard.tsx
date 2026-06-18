@@ -42,12 +42,12 @@ function CircleProgress({ value, max, color, label, sublabel }: {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold text-[#1A1A2E]">{value % 1 === 0 ? value : value.toFixed(1)}</span>
+          <span className="text-lg font-bold text-foreground">{value % 1 === 0 ? value : value.toFixed(1)}</span>
         </div>
       </div>
       <div>
-        <p className="font-semibold text-[#1A1A2E] text-sm">{label}</p>
-        <p className="text-xs text-[#6B7280] mt-0.5">{sublabel}</p>
+        <p className="font-semibold text-foreground text-sm">{label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{sublabel}</p>
       </div>
     </div>
   );
@@ -159,14 +159,14 @@ export default function Dashboard() {
       {/* Top row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Today's Attendance — spans 2 cols */}
-        <Card className="lg:col-span-2 border-[#E5E3F3] shadow-sm">
+        <Card className="lg:col-span-2 border-border shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E]">
-                <CalendarDays className="w-4 h-4 text-[#6C5CE7]" />
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <CalendarDays className="w-4 h-4 text-primary" />
                 Today's Attendance
               </div>
-              <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="w-3.5 h-3.5" />
                 <span className={`flex items-center gap-1.5 font-medium text-xs px-2.5 py-1 rounded-full ${hasPunchedIn && !hasPunchedOut ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${hasPunchedIn && !hasPunchedOut ? "bg-green-500" : "bg-gray-400"}`} />
@@ -176,14 +176,14 @@ export default function Dashboard() {
             </div>
 
             <div className="mb-1">
-              <span className="text-4xl font-bold text-[#1A1A2E] tabular-nums">
+              <span className="text-4xl font-bold text-foreground tabular-nums">
                 {formatWorkedTime(workedMinutes)}
               </span>
-              <span className="ml-2 text-sm text-[#6B7280] font-medium">worked today</span>
+              <span className="ml-2 text-sm text-muted-foreground font-medium">worked today</span>
             </div>
 
             {hasPunchedIn && (
-              <div className="flex items-center gap-4 text-sm text-[#6B7280] mb-4">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                 <span>
                   {formatTimeStr(todayAttendance.punchIn!)}
                   {hasPunchedOut ? ` – ${formatTimeStr(todayAttendance.punchOut!)}` : " – Now"}
@@ -192,9 +192,9 @@ export default function Dashboard() {
             )}
 
             {/* Progress bar */}
-            <div className="h-2 bg-[#EDE9FE] rounded-full mb-5 overflow-hidden">
+            <div className="h-2 bg-accent rounded-full mb-5 overflow-hidden">
               <div
-                className="h-full bg-[#6C5CE7] rounded-full transition-all duration-500"
+                className="h-full bg-primary rounded-full transition-all duration-500"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -205,9 +205,9 @@ export default function Dashboard() {
                 { label: "REMAINING", value: formatWorkedTime(remainingMinutes) },
                 { label: "EXTRA HOURS", value: `+${formatWorkedTime(extraMinutes)}` },
               ].map(({ label, value }) => (
-                <div key={label} className="bg-[#F8F7FF] rounded-xl p-3">
-                  <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wide mb-1">{label}</p>
-                  <p className="text-sm font-bold text-[#1A1A2E] tabular-nums">{value}</p>
+                <div key={label} className="bg-accent/40 rounded-xl p-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">{label}</p>
+                  <p className="text-sm font-bold text-foreground tabular-nums">{value}</p>
                 </div>
               ))}
             </div>
@@ -216,7 +216,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               {!hasPunchedIn ? (
                 <Button
-                  className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white font-semibold px-6 gap-2"
+                  className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 gap-2"
                   onClick={handlePunchIn}
                   disabled={punchIn.isPending}
                   data-testid="button-punch-in"
@@ -227,7 +227,7 @@ export default function Dashboard() {
               ) : !hasPunchedOut ? (
                 <Button
                   variant="outline"
-                  className="border-[#6C5CE7] text-[#6C5CE7] hover:bg-[#EDE9FE] font-semibold px-6 gap-2"
+                  className="border-primary text-primary hover:bg-accent font-semibold px-6 gap-2"
                   onClick={handlePunchOut}
                   disabled={punchOut.isPending}
                   data-testid="button-punch-out"
@@ -236,11 +236,11 @@ export default function Dashboard() {
                   Punch Out
                 </Button>
               ) : (
-                <span className="text-sm text-[#6B7280] font-medium">Day complete</span>
+                <span className="text-sm text-muted-foreground font-medium">Day complete</span>
               )}
               <button
                 onClick={() => setCorrectionOpen(true)}
-                className="text-sm text-[#6C5CE7] hover:underline font-medium"
+                className="text-sm text-primary hover:underline font-medium"
                 data-testid="button-request-correction"
               >
                 Request Correction
@@ -252,28 +252,28 @@ export default function Dashboard() {
         {/* Right column — Weekly Hours + Leave Balance */}
         <div className="flex flex-col gap-5">
           {/* Weekly Work Hours */}
-          <Card className="border-[#E5E3F3] shadow-sm flex-1">
+          <Card className="border-border shadow-sm flex-1">
             <CardContent className="p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] mb-3">
-                <BarChart2 className="w-4 h-4 text-[#6C5CE7]" />
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-3">
+                <BarChart2 className="w-4 h-4 text-primary" />
                 Weekly Work Hours
               </div>
               <div className="flex items-baseline gap-3 mb-3">
-                <span className="text-2xl font-bold text-[#1A1A2E]">{weekTotal.toFixed(1)}</span>
-                <span className="text-xs text-[#6B7280]">hrs this week</span>
-                <span className="text-sm font-semibold text-[#1A1A2E] ml-2">{weekDays}</span>
-                <span className="text-xs text-[#6B7280]">days worked</span>
+                <span className="text-2xl font-bold text-foreground">{weekTotal.toFixed(1)}</span>
+                <span className="text-xs text-muted-foreground">hrs this week</span>
+                <span className="text-sm font-semibold text-foreground ml-2">{weekDays}</span>
+                <span className="text-xs text-muted-foreground">days worked</span>
               </div>
               <div className="flex items-end gap-1.5 h-16">
                 {weeklyHours.map(({ day, hours }) => (
                   <div key={day} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full flex items-end justify-center" style={{ height: 44 }}>
                       <div
-                        className="w-full max-w-[20px] rounded-t-sm bg-[#6C5CE7] transition-all"
+                        className="w-full max-w-[20px] rounded-t-sm bg-primary transition-all"
                         style={{ height: `${Math.round((hours / maxBar) * 44)}px`, opacity: hours > 0 ? 1 : 0.2 }}
                       />
                     </div>
-                    <span className="text-[9px] text-[#6B7280] font-medium">{day}</span>
+                    <span className="text-[9px] text-muted-foreground font-medium">{day}</span>
                   </div>
                 ))}
               </div>
@@ -281,10 +281,10 @@ export default function Dashboard() {
           </Card>
 
           {/* Leave Balance */}
-          <Card className="border-[#E5E3F3] shadow-sm flex-1">
+          <Card className="border-border shadow-sm flex-1">
             <CardContent className="p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] mb-4">
-                <Briefcase className="w-4 h-4 text-[#6C5CE7]" />
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-4">
+                <Briefcase className="w-4 h-4 text-primary" />
                 Leave Balance
               </div>
               <div className="space-y-4">
@@ -308,7 +308,7 @@ export default function Dashboard() {
                 )}
               </div>
               <Link href="/leave-requests">
-                <Button className="w-full mt-4 bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white text-sm font-semibold gap-2" data-testid="button-request-leave">
+                <Button className="w-full mt-4 bg-primary hover:bg-primary/90 text-white text-sm font-semibold gap-2" data-testid="button-request-leave">
                   <ChevronRight className="w-4 h-4" />
                   Request Leave
                 </Button>
@@ -321,10 +321,10 @@ export default function Dashboard() {
       {/* Bottom row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Upcoming Holidays */}
-        <Card className="border-[#E5E3F3] shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardContent className="p-5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] mb-4">
-              <CalendarDays className="w-4 h-4 text-[#6C5CE7]" />
+            <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-4">
+              <CalendarDays className="w-4 h-4 text-primary" />
               Upcoming Holidays
             </div>
             <div className="space-y-4">
@@ -333,20 +333,20 @@ export default function Dashboard() {
                 const daysLeft = differenceInDays(date, new Date());
                 return (
                   <div key={h.id} className="flex items-start gap-4">
-                    <div className="w-12 shrink-0 text-center rounded-xl bg-[#6C5CE7] text-white py-1.5">
+                    <div className="w-12 shrink-0 text-center rounded-xl bg-primary text-white py-1.5">
                       <div className="text-[9px] font-semibold uppercase tracking-wide opacity-80">
                         {format(date, "MMM")}
                       </div>
                       <div className="text-lg font-bold leading-tight">{format(date, "d")}</div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[#1A1A2E] text-sm truncate">{h.name}</p>
-                      <p className="text-xs text-[#6B7280] mt-0.5">
+                      <p className="font-semibold text-foreground text-sm truncate">{h.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {h.dayOfWeek}, {format(date, "MMMM d")}
                       </p>
                       <div className="flex items-center gap-2 mt-1.5">
-                        <span className="text-[10px] text-[#6B7280]">In {daysLeft} days</span>
-                        <span className="text-[10px] bg-[#F4F3FF] text-[#6C5CE7] px-2 py-0.5 rounded-full font-medium capitalize">
+                        <span className="text-[10px] text-muted-foreground">In {daysLeft} days</span>
+                        <span className="text-[10px] bg-accent/60 text-primary px-2 py-0.5 rounded-full font-medium capitalize">
                           {h.type}
                         </span>
                       </div>
@@ -355,35 +355,35 @@ export default function Dashboard() {
                 );
               })}
               {upcomingHolidays.length === 0 && (
-                <p className="text-sm text-[#6B7280] py-4 text-center">No upcoming holidays</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">No upcoming holidays</p>
               )}
             </div>
           </CardContent>
         </Card>
 
         {/* Announcements & Events */}
-        <Card className="border-[#E5E3F3] shadow-sm">
+        <Card className="border-border shadow-sm">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E]">
-                <Bell className="w-4 h-4 text-[#6C5CE7]" />
+              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Bell className="w-4 h-4 text-primary" />
                 Announcements &amp; Events
               </div>
-              <Link href="/announcements" className="text-xs text-[#6C5CE7] hover:underline font-medium flex items-center gap-1">
+              <Link href="/announcements" className="text-xs text-primary hover:underline font-medium flex items-center gap-1">
                 View All <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-0 border-b border-[#E5E3F3] mb-4">
+            <div className="flex gap-0 border-b border-border mb-4">
               {(["Announcements", "Events"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setAnnTab(tab)}
                   className={`px-4 pb-2 text-sm font-medium border-b-2 ${
                     annTab === tab
-                      ? "border-[#6C5CE7] text-[#6C5CE7]"
-                      : "border-transparent text-[#6B7280] hover:text-[#1A1A2E]"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                   data-testid={`tab-${tab.toLowerCase()}`}
                 >
@@ -395,27 +395,27 @@ export default function Dashboard() {
             <div className="space-y-4">
               {tabItems.map((a) => (
                 <div key={a.id} className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#F4F3FF] flex items-center justify-center shrink-0 mt-0.5">
-                    <Bell className="w-3.5 h-3.5 text-[#6C5CE7]" />
+                  <div className="w-8 h-8 rounded-full bg-accent/60 flex items-center justify-center shrink-0 mt-0.5">
+                    <Bell className="w-3.5 h-3.5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-semibold text-[#1A1A2E] truncate">{a.title}</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{a.title}</p>
                       <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded font-medium whitespace-nowrap ${
                         a.priority === "high" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
                       }`}>
                         {a.category}
                       </span>
                     </div>
-                    <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-2">{a.body}</p>
-                    <p className="text-[10px] text-[#9CA3AF] mt-1">
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{a.body}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
                       {format(parseISO(a.publishedAt), "MMM d")}
                     </p>
                   </div>
                 </div>
               ))}
               {tabItems.length === 0 && (
-                <p className="text-sm text-[#6B7280] py-4 text-center">
+                <p className="text-sm text-muted-foreground py-4 text-center">
                   No {annTab.toLowerCase()} to show.
                 </p>
               )}

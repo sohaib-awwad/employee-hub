@@ -42,13 +42,13 @@ export default function AdminAttendance() {
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-[#FAFAFA]">
+              <tr className="border-b border-border bg-muted/50">
                 {["Employee", "Department", "Punch In", "Punch Out", "Status"].map((c) => (
-                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">{c}</th>
+                  <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{c}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F4F3FF]">
+            <tbody className="divide-y divide-border">
               {isLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <tr key={i}>{Array.from({ length: 5 }).map((_, j) => <td key={j} className="px-5 py-4"><Skeleton className="h-4 w-20" /></td>)}</tr>
@@ -57,9 +57,9 @@ export default function AdminAttendance() {
                 <tr><td colSpan={5} className="px-5 py-12 text-center text-muted-foreground">No employees.</td></tr>
               ) : (
                 rows.map((r) => (
-                  <tr key={r.employeeId} className="hover:bg-[#FAFAFA]" data-testid={`row-attendance-${r.employeeId}`}>
+                  <tr key={r.employeeId} className="hover:bg-muted/50" data-testid={`row-attendance-${r.employeeId}`}>
                     <td className="px-5 py-3.5 font-medium text-foreground">{r.employeeName}</td>
-                    <td className="px-5 py-3.5 text-[#6B7280]">{r.department ?? "—"}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground">{r.department ?? "—"}</td>
                     <td className="px-5 py-3.5 text-foreground">{formatTime(r.punchIn)}</td>
                     <td className="px-5 py-3.5 text-foreground">{formatTime(r.punchOut)}</td>
                     <td className="px-5 py-3.5">

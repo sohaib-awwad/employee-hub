@@ -29,7 +29,7 @@ const LEAVE_TYPE_META: Record<string, { label: string; icon: React.ReactNode; co
   sick:      { label: "Sick Leave",      icon: <Thermometer className="w-5 h-5" />,    color: "text-orange-600 bg-orange-100", barColor: "bg-orange-500" },
   casual:    { label: "Casual Leave",    icon: <Coffee className="w-5 h-5" />,         color: "text-green-600 bg-green-100", barColor: "bg-green-500" },
   maternity: { label: "Maternity Leave", icon: <Baby className="w-5 h-5" />,           color: "text-pink-600 bg-pink-100",   barColor: "bg-pink-500" },
-  paternity: { label: "Paternity Leave", icon: <Baby className="w-5 h-5" />,           color: "text-purple-600 bg-purple-100", barColor: "bg-[#6C5CE7]" },
+  paternity: { label: "Paternity Leave", icon: <Baby className="w-5 h-5" />,           color: "text-purple-600 bg-purple-100", barColor: "bg-primary" },
   unpaid:    { label: "Unpaid Leave",    icon: <Wallet className="w-5 h-5" />,         color: "text-gray-600 bg-gray-100",   barColor: "bg-gray-400" },
   other:     { label: "Other Leave",     icon: <MoreHorizontal className="w-5 h-5" />, color: "text-gray-600 bg-gray-100",   barColor: "bg-gray-400" },
 };
@@ -120,11 +120,11 @@ export default function LeaveRequests() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#1A1A2E]">Leave Requests</h1>
-          <p className="text-sm text-[#6B7280] mt-0.5">Manage your leave applications and track your balances.</p>
+          <h1 className="text-2xl font-bold text-foreground">Leave Requests</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage your leave applications and track your balances.</p>
         </div>
         <Button
-          className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white gap-2 self-start sm:self-auto"
+          className="bg-primary hover:bg-primary/90 text-white gap-2 self-start sm:self-auto"
           onClick={() => setIsApplyOpen(true)}
           data-testid="button-request-leave"
         >
@@ -136,8 +136,8 @@ export default function LeaveRequests() {
       {/* Leave Balances */}
       <div>
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-1 h-5 bg-[#6C5CE7] rounded-full" />
-          <h2 className="text-sm font-semibold text-[#1A1A2E]">Leave Balances</h2>
+          <div className="w-1 h-5 bg-primary rounded-full" />
+          <h2 className="text-sm font-semibold text-foreground">Leave Balances</h2>
         </div>
         {balanceLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -149,7 +149,7 @@ export default function LeaveRequests() {
               const meta = LEAVE_TYPE_META[d.type];
               const pct = d.total > 0 ? (d.used / d.total) * 100 : 0;
               return (
-                <Card key={d.type} className="border-[#E5E3F3] shadow-sm" data-testid={`card-leave-balance-${d.type}`}>
+                <Card key={d.type} className="border-border shadow-sm" data-testid={`card-leave-balance-${d.type}`}>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -157,19 +157,19 @@ export default function LeaveRequests() {
                           {meta?.icon}
                         </div>
                         <div>
-                          <p className="font-semibold text-[#1A1A2E] text-sm">{meta?.label ?? d.type}</p>
-                          <p className="text-xs text-[#6B7280]">{d.remaining} days remaining</p>
+                          <p className="font-semibold text-foreground text-sm">{meta?.label ?? d.type}</p>
+                          <p className="text-xs text-muted-foreground">{d.remaining} days remaining</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-bold text-[#6C5CE7]">{d.remaining % 1 === 0 ? d.remaining : d.remaining.toFixed(2)}</span>
-                        <span className="text-xs text-[#9CA3AF] ml-1">/ {d.total}</span>
+                        <span className="text-2xl font-bold text-primary">{d.remaining % 1 === 0 ? d.remaining : d.remaining.toFixed(2)}</span>
+                        <span className="text-xs text-muted-foreground ml-1">/ {d.total}</span>
                       </div>
                     </div>
-                    <div className="h-1.5 bg-[#EDE9FE] rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${meta?.barColor ?? "bg-[#6C5CE7]"}`} style={{ width: `${pct}%` }} />
+                    <div className="h-1.5 bg-accent rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${meta?.barColor ?? "bg-primary"}`} style={{ width: `${pct}%` }} />
                     </div>
-                    <div className="flex justify-between mt-2 text-xs text-[#9CA3AF]">
+                    <div className="flex justify-between mt-2 text-xs text-muted-foreground">
                       <span>Used: {d.used}</span>
                       <span>Total Entitlement: {d.total}</span>
                     </div>
@@ -185,15 +185,15 @@ export default function LeaveRequests() {
       {companyDetails.length > 0 && !balanceLoading && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-1 h-5 bg-[#6C5CE7] rounded-full" />
-            <h2 className="text-sm font-semibold text-[#1A1A2E]">Company Leave Balances</h2>
+            <div className="w-1 h-5 bg-primary rounded-full" />
+            <h2 className="text-sm font-semibold text-foreground">Company Leave Balances</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {companyDetails.map((d) => {
               const meta = LEAVE_TYPE_META[d.type];
               const pct = d.total > 0 ? (d.used / d.total) * 100 : 0;
               return (
-                <Card key={d.type} className="border-[#E5E3F3] shadow-sm" data-testid={`card-company-leave-balance-${d.type}`}>
+                <Card key={d.type} className="border-border shadow-sm" data-testid={`card-company-leave-balance-${d.type}`}>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -201,19 +201,19 @@ export default function LeaveRequests() {
                           {meta?.icon ?? <Heart className="w-5 h-5" />}
                         </div>
                         <div>
-                          <p className="font-semibold text-[#1A1A2E] text-sm">{meta?.label ?? d.type}</p>
-                          <p className="text-xs text-[#6B7280]">{d.remaining} days remaining</p>
+                          <p className="font-semibold text-foreground text-sm">{meta?.label ?? d.type}</p>
+                          <p className="text-xs text-muted-foreground">{d.remaining} days remaining</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-bold text-[#6C5CE7]">{d.remaining}</span>
-                        <span className="text-xs text-[#9CA3AF] ml-1">/ {d.total}</span>
+                        <span className="text-2xl font-bold text-primary">{d.remaining}</span>
+                        <span className="text-xs text-muted-foreground ml-1">/ {d.total}</span>
                       </div>
                     </div>
-                    <div className="h-1.5 bg-[#EDE9FE] rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${meta?.barColor ?? "bg-[#6C5CE7]"}`} style={{ width: `${pct}%` }} />
+                    <div className="h-1.5 bg-accent rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${meta?.barColor ?? "bg-primary"}`} style={{ width: `${pct}%` }} />
                     </div>
-                    <div className="flex justify-between mt-2 text-xs text-[#9CA3AF]">
+                    <div className="flex justify-between mt-2 text-xs text-muted-foreground">
                       <span>Used: {d.used}</span>
                       <span>Total Entitlement: {d.total}</span>
                     </div>
@@ -226,14 +226,14 @@ export default function LeaveRequests() {
       )}
 
       {/* Leave Request History */}
-      <Card className="border-[#E5E3F3] shadow-sm overflow-hidden">
+      <Card className="border-border shadow-sm overflow-hidden">
         <CardContent className="p-0">
-          <div className="p-5 border-b border-[#E5E3F3]">
+          <div className="p-5 border-b border-border">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <h2 className="text-base font-semibold text-[#1A1A2E]">Leave Request History</h2>
+              <h2 className="text-base font-semibold text-foreground">Leave Request History</h2>
               <div className="flex flex-wrap gap-2">
                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-36 text-sm border-[#E5E3F3]" data-testid="select-leave-type-filter">
+                  <SelectTrigger className="w-36 text-sm border-border" data-testid="select-leave-type-filter">
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
                   <SelectContent>
@@ -248,9 +248,9 @@ export default function LeaveRequests() {
                   </SelectContent>
                 </Select>
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9CA3AF]" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <Input
-                    className="pl-8 w-44 text-sm border-[#E5E3F3]"
+                    className="pl-8 w-44 text-sm border-border"
                     placeholder="Search requests..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -268,14 +268,14 @@ export default function LeaveRequests() {
                   onClick={() => setActiveTab(tab)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors capitalize flex items-center gap-1.5 ${
                     activeTab === tab
-                      ? "bg-[#6C5CE7] text-white"
-                      : "bg-[#F4F3FF] text-[#6B7280] hover:bg-[#EDE9FE] hover:text-[#6C5CE7]"
+                      ? "bg-primary text-white"
+                      : "bg-accent/60 text-muted-foreground hover:bg-accent hover:text-primary"
                   }`}
                   data-testid={`tab-leaves-${tab}`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                    activeTab === tab ? "bg-white/20 text-white" : "bg-white text-[#6B7280]"
+                    activeTab === tab ? "bg-white/20 text-white" : "bg-white text-muted-foreground"
                   }`}>
                     {counts[tab]}
                   </span>
@@ -288,15 +288,15 @@ export default function LeaveRequests() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#E5E3F3] bg-[#FAFAFA]">
+                <tr className="border-b border-border bg-muted/50">
                   {["Leave Type", "Start Date", "End Date", "Days", "Status", ""].map((col, i) => (
-                    <th key={i} className="px-5 py-3 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wide">
+                    <th key={i} className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                       {col}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F4F3FF]">
+              <tbody className="divide-y divide-border">
                 {leavesLoading ? (
                   Array.from({ length: 4 }).map((_, i) => (
                     <tr key={i}>
@@ -307,23 +307,23 @@ export default function LeaveRequests() {
                   ))
                 ) : filteredLeaves.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-5 py-12 text-center text-[#6B7280] text-sm">
+                    <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground text-sm">
                       No leave requests found.
                     </td>
                   </tr>
                 ) : (
                   filteredLeaves.map((leave) => (
-                    <tr key={leave.id} className="hover:bg-[#FAFAFA] transition-colors" data-testid={`row-leave-${leave.id}`}>
-                      <td className="px-5 py-3.5 font-medium text-[#1A1A2E] capitalize">
+                    <tr key={leave.id} className="hover:bg-muted/50 transition-colors" data-testid={`row-leave-${leave.id}`}>
+                      <td className="px-5 py-3.5 font-medium text-foreground capitalize">
                         {LEAVE_TYPE_META[leave.type]?.label ?? leave.type}
                       </td>
-                      <td className="px-5 py-3.5 text-[#6B7280]">
+                      <td className="px-5 py-3.5 text-muted-foreground">
                         {format(parseISO(leave.startDate), "MMM d, yyyy")}
                       </td>
-                      <td className="px-5 py-3.5 text-[#6B7280]">
+                      <td className="px-5 py-3.5 text-muted-foreground">
                         {format(parseISO(leave.endDate), "MMM d, yyyy")}
                       </td>
-                      <td className="px-5 py-3.5 text-[#1A1A2E] font-medium">{leave.days}</td>
+                      <td className="px-5 py-3.5 text-foreground font-medium">{leave.days}</td>
                       <td className="px-5 py-3.5">
                         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_STYLE[leave.status] ?? "bg-gray-100 text-gray-500"}`}>
                           {leave.status}
@@ -356,7 +356,7 @@ export default function LeaveRequests() {
       <Dialog open={isApplyOpen} onOpenChange={setIsApplyOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-[#1A1A2E]">Request Leave</DialogTitle>
+            <DialogTitle className="text-foreground">Request Leave</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-2">
@@ -413,7 +413,7 @@ export default function LeaveRequests() {
               )} />
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setIsApplyOpen(false)}>Cancel</Button>
-                <Button type="submit" className="bg-[#6C5CE7] hover:bg-[#5A4FCF] text-white" disabled={createLeave.isPending} data-testid="button-submit-leave">
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-white" disabled={createLeave.isPending} data-testid="button-submit-leave">
                   {createLeave.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Submit Request
                 </Button>
