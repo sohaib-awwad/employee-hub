@@ -25,6 +25,8 @@ tags:
     description: Announcements and events
   - name: requests
     description: Employee correction and attendance requests
+  - name: admin
+    description: Admin-only management endpoints
 paths:
   /auth/login:
     post:
@@ -325,6 +327,278 @@ paths:
               schema:
                 $ref: "#/components/schemas/EmployeeRequest"
 
+  /admin/overview:
+    get:
+      operationId: adminGetOverview
+      tags: [admin]
+      summary: Admin dashboard summary counts
+      responses:
+        "200":
+          description: Overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+
+  /admin/leaves:
+    get:
+      operationId: adminListLeaves
+      tags: [admin]
+      summary: List all leave requests
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+            enum: [pending, approved, rejected, cancelled, null]
+      responses:
+        "200":
+          description: Leaves
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaveRequest"
+
+  /admin/leaves/{id}/approve:
+    post:
+      operationId: adminApproveLeave
+      tags: [admin]
+      summary: Approve a leave request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated leave
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveRequest"
+
+  /admin/leaves/{id}/reject:
+    post:
+      operationId: adminRejectLeave
+      tags: [admin]
+      summary: Reject a leave request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionInput"
+      responses:
+        "200":
+          description: Updated leave
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveRequest"
+
+  /admin/requests:
+    get:
+      operationId: adminListRequests
+      tags: [admin]
+      summary: List all employee requests
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+            enum: [pending, approved, rejected, null]
+      responses:
+        "200":
+          description: Requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmployeeRequest"
+
+  /admin/requests/{id}/approve:
+    post:
+      operationId: adminApproveRequest
+      tags: [admin]
+      summary: Approve an employee request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeRequest"
+
+  /admin/requests/{id}/reject:
+    post:
+      operationId: adminRejectRequest
+      tags: [admin]
+      summary: Reject an employee request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionInput"
+      responses:
+        "200":
+          description: Updated request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeRequest"
+
+  /admin/announcements:
+    post:
+      operationId: adminCreateAnnouncement
+      tags: [admin]
+      summary: Create an announcement or event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementItem"
+
+  /admin/announcements/{id}:
+    patch:
+      operationId: adminUpdateAnnouncement
+      tags: [admin]
+      summary: Update an announcement or event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnnouncementInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnnouncementItem"
+    delete:
+      operationId: adminDeleteAnnouncement
+      tags: [admin]
+      summary: Delete an announcement or event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/employees:
+    get:
+      operationId: adminListEmployees
+      tags: [admin]
+      summary: List all employees
+      responses:
+        "200":
+          description: Employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+    post:
+      operationId: adminCreateEmployee
+      tags: [admin]
+      summary: Create an employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminEmployeeInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /admin/employees/{id}:
+    patch:
+      operationId: adminUpdateEmployee
+      tags: [admin]
+      summary: Update an employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminEmployeeUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /admin/attendance:
+    get:
+      operationId: adminListAttendanceToday
+      tags: [admin]
+      summary: Today's attendance across all employees
+      responses:
+        "200":
+          description: Attendance overview
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminAttendanceRow"
+
 components:
   schemas:
     HealthStatus:
@@ -417,6 +691,8 @@ components:
         approvedBy:
           type: ["string", "null"]
         comments:
+          type: ["string", "null"]
+        employeeName:
           type: ["string", "null"]
 
     LeaveInput:
@@ -542,6 +818,8 @@ components:
           type: ["string", "null"]
         createdAt:
           type: string
+        employeeName:
+          type: ["string", "null"]
 
     RequestInput:
       type: object
@@ -601,3 +879,107 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AnnouncementItem"
+
+    ActionInput:
+      type: object
+      properties:
+        comments:
+          type: ["string", "null"]
+
+    AnnouncementInput:
+      type: object
+      required: [title, body, category, priority, type, publishedAt]
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        category:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high]
+        type:
+          type: string
+          enum: [announcement, event]
+        publishedAt:
+          type: string
+
+    AdminEmployeeInput:
+      type: object
+      required: [name, email, department, position, joinDate, role, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        position:
+          type: string
+        joinDate:
+          type: string
+        avatarInitials:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        managerName:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [employee, admin]
+        password:
+          type: string
+
+    AdminEmployeeUpdate:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        department:
+          type: ["string", "null"]
+        position:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        managerName:
+          type: ["string", "null"]
+        role:
+          type: ["string", "null"]
+          enum: [employee, admin, null]
+        password:
+          type: ["string", "null"]
+
+    AdminAttendanceRow:
+      type: object
+      required: [employeeId, employeeName, status]
+      properties:
+        employeeId:
+          type: integer
+        employeeName:
+          type: string
+        department:
+          type: ["string", "null"]
+        date:
+          type: ["string", "null"]
+        punchIn:
+          type: ["string", "null"]
+        punchOut:
+          type: ["string", "null"]
+        status:
+          type: string
+        hoursWorked:
+          type: ["number", "null"]
+
+    AdminOverview:
+      type: object
+      required: [pendingLeaves, pendingRequests, totalEmployees, totalAnnouncements]
+      properties:
+        pendingLeaves:
+          type: integer
+        pendingRequests:
+          type: integer
+        totalEmployees:
+          type: integer
+        totalAnnouncements:
+          type: integer

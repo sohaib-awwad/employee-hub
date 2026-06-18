@@ -19,4 +19,6 @@ export interface EmployeeRequest {
   /** @nullable */
   comments?: string | null;
   createdAt: string;
+  /** @nullable */
+  employeeName?: string | null;
 }

@@ -101,6 +101,8 @@ export interface LeaveRequest {
   approvedBy?: string | null;
   /** @nullable */
   comments?: string | null;
+  /** @nullable */
+  employeeName?: string | null;
 }
 
 export type LeaveInputType = typeof LeaveInputType[keyof typeof LeaveInputType];
@@ -223,6 +225,8 @@ export interface EmployeeRequest {
   /** @nullable */
   comments?: string | null;
   createdAt: string;
+  /** @nullable */
+  employeeName?: string | null;
 }
 
 export type RequestInputType = typeof RequestInputType[keyof typeof RequestInputType];
@@ -262,6 +266,112 @@ export interface DashboardSummary {
   monthlyStats: DashboardSummaryMonthlyStats;
   weeklyHours: DashboardSummaryWeeklyHoursItem[];
   recentAnnouncements: AnnouncementItem[];
+}
+
+export interface ActionInput {
+  /** @nullable */
+  comments?: string | null;
+}
+
+export type AnnouncementInputPriority = typeof AnnouncementInputPriority[keyof typeof AnnouncementInputPriority];
+
+
+export const AnnouncementInputPriority = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export type AnnouncementInputType = typeof AnnouncementInputType[keyof typeof AnnouncementInputType];
+
+
+export const AnnouncementInputType = {
+  announcement: 'announcement',
+  event: 'event',
+} as const;
+
+export interface AnnouncementInput {
+  title: string;
+  body: string;
+  category: string;
+  priority: AnnouncementInputPriority;
+  type: AnnouncementInputType;
+  publishedAt: string;
+}
+
+export type AdminEmployeeInputRole = typeof AdminEmployeeInputRole[keyof typeof AdminEmployeeInputRole];
+
+
+export const AdminEmployeeInputRole = {
+  employee: 'employee',
+  admin: 'admin',
+} as const;
+
+export interface AdminEmployeeInput {
+  name: string;
+  email: string;
+  department: string;
+  position: string;
+  joinDate: string;
+  /** @nullable */
+  avatarInitials?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  managerName?: string | null;
+  role: AdminEmployeeInputRole;
+  password: string;
+}
+
+/**
+ * @nullable
+ */
+export type AdminEmployeeUpdateRole = typeof AdminEmployeeUpdateRole[keyof typeof AdminEmployeeUpdateRole] | null;
+
+
+export const AdminEmployeeUpdateRole = {
+  employee: 'employee',
+  admin: 'admin',
+} as const;
+
+export interface AdminEmployeeUpdate {
+  /** @nullable */
+  name?: string | null;
+  /** @nullable */
+  department?: string | null;
+  /** @nullable */
+  position?: string | null;
+  /** @nullable */
+  phone?: string | null;
+  /** @nullable */
+  managerName?: string | null;
+  /** @nullable */
+  role?: AdminEmployeeUpdateRole;
+  /** @nullable */
+  password?: string | null;
+}
+
+export interface AdminAttendanceRow {
+  employeeId: number;
+  employeeName: string;
+  /** @nullable */
+  department?: string | null;
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  punchIn?: string | null;
+  /** @nullable */
+  punchOut?: string | null;
+  status: string;
+  /** @nullable */
+  hoursWorked?: number | null;
+}
+
+export interface AdminOverview {
+  pendingLeaves: number;
+  pendingRequests: number;
+  totalEmployees: number;
+  totalAnnouncements: number;
 }
 
 export type ListAttendanceParams = {
@@ -320,5 +430,38 @@ export const ListAnnouncementsPriority = {
   low: 'low',
   medium: 'medium',
   high: 'high',
+} as const;
+
+export type AdminListLeavesParams = {
+/**
+ * @nullable
+ */
+status?: AdminListLeavesStatus;
+};
+
+export type AdminListLeavesStatus = typeof AdminListLeavesStatus[keyof typeof AdminListLeavesStatus] | null;
+
+
+export const AdminListLeavesStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+  cancelled: 'cancelled',
+} as const;
+
+export type AdminListRequestsParams = {
+/**
+ * @nullable
+ */
+status?: AdminListRequestsStatus;
+};
+
+export type AdminListRequestsStatus = typeof AdminListRequestsStatus[keyof typeof AdminListRequestsStatus] | null;
+
+
+export const AdminListRequestsStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
 } as const;
 

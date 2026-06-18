@@ -21,4 +21,6 @@ export interface LeaveRequest {
   approvedBy?: string | null;
   /** @nullable */
   comments?: string | null;
+  /** @nullable */
+  employeeName?: string | null;
 }

@@ -6,7 +6,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
-import AdminHome from "@/pages/admin";
+import AdminLayout from "@/components/admin-layout";
+import AdminOverview from "@/pages/admin/overview";
+import AdminLeaves from "@/pages/admin/leaves";
+import AdminRequests from "@/pages/admin/requests";
+import AdminAnnouncements from "@/pages/admin/announcements";
+import AdminEmployees from "@/pages/admin/employees";
+import AdminAttendance from "@/pages/admin/attendance";
 import Layout from "@/components/layout";
 import Dashboard from "@/pages/dashboard";
 import Attendance from "@/pages/attendance";
@@ -51,12 +57,19 @@ function AuthedRoutes() {
 
   if (isAdmin) {
     return (
-      <Switch>
-        <Route path="/admin" component={AdminHome} />
-        <Route>
-          <Redirect to="/admin" />
-        </Route>
-      </Switch>
+      <AdminLayout>
+        <Switch>
+          <Route path="/admin" component={AdminOverview} />
+          <Route path="/admin/leaves" component={AdminLeaves} />
+          <Route path="/admin/requests" component={AdminRequests} />
+          <Route path="/admin/announcements" component={AdminAnnouncements} />
+          <Route path="/admin/employees" component={AdminEmployees} />
+          <Route path="/admin/attendance" component={AdminAttendance} />
+          <Route>
+            <Redirect to="/admin" />
+          </Route>
+        </Switch>
+      </AdminLayout>
     );
   }
 

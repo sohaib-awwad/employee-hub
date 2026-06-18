@@ -150,7 +150,8 @@ export const ListLeavesResponseItem = zod.object({
   "reason": zod.string(),
   "createdAt": zod.string(),
   "approvedBy": zod.string().nullish(),
-  "comments": zod.string().nullish()
+  "comments": zod.string().nullish(),
+  "employeeName": zod.string().nullish()
 })
 export const ListLeavesResponse = zod.array(ListLeavesResponseItem)
 
@@ -201,7 +202,8 @@ export const CancelLeaveResponse = zod.object({
   "reason": zod.string(),
   "createdAt": zod.string(),
   "approvedBy": zod.string().nullish(),
-  "comments": zod.string().nullish()
+  "comments": zod.string().nullish(),
+  "employeeName": zod.string().nullish()
 })
 
 
@@ -342,7 +344,8 @@ export const ListRequestsResponseItem = zod.object({
   "reason": zod.string(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "comments": zod.string().nullish(),
-  "createdAt": zod.string()
+  "createdAt": zod.string(),
+  "employeeName": zod.string().nullish()
 })
 export const ListRequestsResponse = zod.array(ListRequestsResponseItem)
 
@@ -355,5 +358,284 @@ export const CreateRequestBody = zod.object({
   "date": zod.string().nullish(),
   "reason": zod.string()
 })
+
+
+/**
+ * @summary Admin dashboard summary counts
+ */
+export const AdminGetOverviewResponse = zod.object({
+  "pendingLeaves": zod.number(),
+  "pendingRequests": zod.number(),
+  "totalEmployees": zod.number(),
+  "totalAnnouncements": zod.number()
+})
+
+
+/**
+ * @summary List all leave requests
+ */
+export const AdminListLeavesQueryParams = zod.object({
+  "status": zod.union([zod.literal('pending'),zod.literal('approved'),zod.literal('rejected'),zod.literal('cancelled'),zod.literal(null)]).nullish()
+})
+
+export const AdminListLeavesResponseItem = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['annual', 'sick', 'casual', 'maternity', 'paternity', 'unpaid', 'other']),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "days": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'cancelled']),
+  "reason": zod.string(),
+  "createdAt": zod.string(),
+  "approvedBy": zod.string().nullish(),
+  "comments": zod.string().nullish(),
+  "employeeName": zod.string().nullish()
+})
+export const AdminListLeavesResponse = zod.array(AdminListLeavesResponseItem)
+
+
+/**
+ * @summary Approve a leave request
+ */
+export const AdminApproveLeaveParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminApproveLeaveResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['annual', 'sick', 'casual', 'maternity', 'paternity', 'unpaid', 'other']),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "days": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'cancelled']),
+  "reason": zod.string(),
+  "createdAt": zod.string(),
+  "approvedBy": zod.string().nullish(),
+  "comments": zod.string().nullish(),
+  "employeeName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Reject a leave request
+ */
+export const AdminRejectLeaveParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminRejectLeaveBody = zod.object({
+  "comments": zod.string().nullish()
+})
+
+export const AdminRejectLeaveResponse = zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['annual', 'sick', 'casual', 'maternity', 'paternity', 'unpaid', 'other']),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "days": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'cancelled']),
+  "reason": zod.string(),
+  "createdAt": zod.string(),
+  "approvedBy": zod.string().nullish(),
+  "comments": zod.string().nullish(),
+  "employeeName": zod.string().nullish()
+})
+
+
+/**
+ * @summary List all employee requests
+ */
+export const AdminListRequestsQueryParams = zod.object({
+  "status": zod.union([zod.literal('pending'),zod.literal('approved'),zod.literal('rejected'),zod.literal(null)]).nullish()
+})
+
+export const AdminListRequestsResponseItem = zod.object({
+  "id": zod.number(),
+  "employeeId": zod.number(),
+  "type": zod.enum(['correction', 'attendance']),
+  "date": zod.string().nullish(),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "comments": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "employeeName": zod.string().nullish()
+})
+export const AdminListRequestsResponse = zod.array(AdminListRequestsResponseItem)
+
+
+/**
+ * @summary Approve an employee request
+ */
+export const AdminApproveRequestParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminApproveRequestResponse = zod.object({
+  "id": zod.number(),
+  "employeeId": zod.number(),
+  "type": zod.enum(['correction', 'attendance']),
+  "date": zod.string().nullish(),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "comments": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "employeeName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Reject an employee request
+ */
+export const AdminRejectRequestParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminRejectRequestBody = zod.object({
+  "comments": zod.string().nullish()
+})
+
+export const AdminRejectRequestResponse = zod.object({
+  "id": zod.number(),
+  "employeeId": zod.number(),
+  "type": zod.enum(['correction', 'attendance']),
+  "date": zod.string().nullish(),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "comments": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "employeeName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Create an announcement or event
+ */
+export const AdminCreateAnnouncementBody = zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "category": zod.string(),
+  "priority": zod.enum(['low', 'medium', 'high']),
+  "type": zod.enum(['announcement', 'event']),
+  "publishedAt": zod.string()
+})
+
+
+/**
+ * @summary Update an announcement or event
+ */
+export const AdminUpdateAnnouncementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminUpdateAnnouncementBody = zod.object({
+  "title": zod.string(),
+  "body": zod.string(),
+  "category": zod.string(),
+  "priority": zod.enum(['low', 'medium', 'high']),
+  "type": zod.enum(['announcement', 'event']),
+  "publishedAt": zod.string()
+})
+
+export const AdminUpdateAnnouncementResponse = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "category": zod.string(),
+  "priority": zod.enum(['low', 'medium', 'high']),
+  "type": zod.enum(['announcement', 'event']),
+  "publishedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an announcement or event
+ */
+export const AdminDeleteAnnouncementParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary List all employees
+ */
+export const AdminListEmployeesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "department": zod.string(),
+  "position": zod.string(),
+  "joinDate": zod.string(),
+  "avatarInitials": zod.string(),
+  "role": zod.enum(['employee', 'admin']),
+  "phone": zod.string().nullish(),
+  "managerId": zod.number().nullish(),
+  "managerName": zod.string().nullish()
+})
+export const AdminListEmployeesResponse = zod.array(AdminListEmployeesResponseItem)
+
+
+/**
+ * @summary Create an employee
+ */
+export const AdminCreateEmployeeBody = zod.object({
+  "name": zod.string(),
+  "email": zod.string(),
+  "department": zod.string(),
+  "position": zod.string(),
+  "joinDate": zod.string(),
+  "avatarInitials": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "managerName": zod.string().nullish(),
+  "role": zod.enum(['employee', 'admin']),
+  "password": zod.string()
+})
+
+
+/**
+ * @summary Update an employee
+ */
+export const AdminUpdateEmployeeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const AdminUpdateEmployeeBody = zod.object({
+  "name": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "position": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "managerName": zod.string().nullish(),
+  "role": zod.union([zod.literal('employee'),zod.literal('admin'),zod.literal(null)]).nullish(),
+  "password": zod.string().nullish()
+})
+
+export const AdminUpdateEmployeeResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "department": zod.string(),
+  "position": zod.string(),
+  "joinDate": zod.string(),
+  "avatarInitials": zod.string(),
+  "role": zod.enum(['employee', 'admin']),
+  "phone": zod.string().nullish(),
+  "managerId": zod.number().nullish(),
+  "managerName": zod.string().nullish()
+})
+
+
+/**
+ * @summary Today's attendance across all employees
+ */
+export const AdminListAttendanceTodayResponseItem = zod.object({
+  "employeeId": zod.number(),
+  "employeeName": zod.string(),
+  "department": zod.string().nullish(),
+  "date": zod.string().nullish(),
+  "punchIn": zod.string().nullish(),
+  "punchOut": zod.string().nullish(),
+  "status": zod.string(),
+  "hoursWorked": zod.number().nullish()
+})
+export const AdminListAttendanceTodayResponse = zod.array(AdminListAttendanceTodayResponseItem)
 
 
