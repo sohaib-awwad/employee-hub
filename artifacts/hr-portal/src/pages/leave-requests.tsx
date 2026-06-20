@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListLeaves, getListLeavesQueryKey, useGetLeaveBalance, getGetLeaveBalanceQueryKey, useCreateLeave, useCancelLeave } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { format, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TablePagination } from "@/components/table-pagination";
 import { Plus, Search, Plane, Thermometer, Coffee, Baby, Wallet, MoreHorizontal, Loader2, Heart } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,12 +65,14 @@ const STATUS_STYLE: Record<string, string> = {
 
 const MAIN_TYPES = ["annual", "sick", "casual", "unpaid"];
 const COMPANY_TYPES = ["maternity", "paternity", "other"];
+const PAGE_SIZE = 10;
 
 export default function LeaveRequests() {
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -128,6 +131,12 @@ export default function LeaveRequests() {
     if (searchQuery && !l.type.includes(searchQuery.toLowerCase()) && !l.reason.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
+
+  // Paginate the filtered history (same control as the admin tables).
+  useEffect(() => setPage(1), [activeTab, typeFilter, searchQuery]);
+  const totalPages = Math.max(1, Math.ceil(filteredLeaves.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedLeaves = filteredLeaves.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const counts = {
     all: leaves?.length ?? 0,
@@ -337,7 +346,7 @@ export default function LeaveRequests() {
                     </td>
                   </tr>
                 ) : (
-                  filteredLeaves.map((leave) => (
+                  pagedLeaves.map((leave) => (
                     <tr key={leave.id} className="hover:bg-muted/50 transition-colors" data-testid={`row-leave-${leave.id}`}>
                       <td className="px-5 py-3.5 font-medium text-foreground capitalize">
                         {LEAVE_TYPE_META[leave.type]?.label ?? leave.type}
@@ -376,6 +385,8 @@ export default function LeaveRequests() {
           </div>
         </CardContent>
       </Card>
+
+      <TablePagination page={currentPage} pageSize={PAGE_SIZE} total={filteredLeaves.length} onPageChange={setPage} />
 
       {/* Apply Leave Dialog */}
       <Dialog open={isApplyOpen} onOpenChange={setIsApplyOpen}>

@@ -1,6 +1,5 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { parseISO, differenceInDays } from "date-fns";
 import {
   useGetMyProfile,
   getGetMyProfileQueryKey,
@@ -31,7 +30,7 @@ interface LayoutProps {
 }
 
 const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/attendance", label: "Attendance", icon: Clock },
   { href: "/leave-requests", label: "Leave Requests", icon: CalendarDays },
   { href: "/announcements", label: "Announcements & Events", icon: Bell },
@@ -44,14 +43,38 @@ export default function Layout({ children }: LayoutProps) {
     query: { queryKey: getGetMyProfileQueryKey() }
   });
 
-  // Notification dot: lit when something was published in the last 7 days.
-  const annParams = { page: 1, limit: 5 };
+  // Unread announcement badge: counts announcements the user hasn't opened yet.
+  // "Seen" state is the highest announcement id the user has viewed, stored
+  // per-user in localStorage; opening the Announcements page marks everything
+  // currently published as seen, which clears the badge.
+  // Only the last 90 days, matching the Announcements page — so the badge can't
+  // get stuck on an old announcement the page no longer shows.
+  const annParams = { page: 1, limit: 20, maxAgeDays: 90 };
   const { data: annData } = useListAnnouncements(annParams, {
     query: { queryKey: getListAnnouncementsQueryKey(annParams) },
   });
-  const hasRecentAnnouncement = (annData?.items ?? []).some(
-    (a) => differenceInDays(new Date(), parseISO(a.publishedAt)) <= 7,
-  );
+  const announcements = annData?.items ?? [];
+  const latestAnnouncementId = announcements.reduce((max, a) => Math.max(max, a.id), 0);
+
+  const seenStorageKey = profile?.id ? `olive:announcements-seen:${profile.id}` : null;
+  const [seenAnnouncementId, setSeenAnnouncementId] = useState(0);
+
+  // Load the per-user "seen" marker once the profile (and so the key) is known.
+  useEffect(() => {
+    if (!seenStorageKey) return;
+    const stored = Number(localStorage.getItem(seenStorageKey) ?? 0);
+    setSeenAnnouncementId(Number.isFinite(stored) ? stored : 0);
+  }, [seenStorageKey]);
+
+  // Viewing the Announcements page marks everything currently published as seen.
+  useEffect(() => {
+    if (!seenStorageKey || location !== "/announcements" || latestAnnouncementId === 0) return;
+    localStorage.setItem(seenStorageKey, String(latestAnnouncementId));
+    setSeenAnnouncementId(latestAnnouncementId);
+  }, [location, latestAnnouncementId, seenStorageKey]);
+
+  const unreadAnnouncements = announcements.filter((a) => a.id > seenAnnouncementId).length;
+  const unreadBadge = unreadAnnouncements > 9 ? "9+" : String(unreadAnnouncements);
 
   return (
     <div className="flex h-screen bg-background">
@@ -85,11 +108,13 @@ export default function Layout({ children }: LayoutProps) {
                 )}
                 <item.icon className={`w-5 h-5 ${isActive ? "text-primary" : ""}`} />
                 {item.label}
-                {item.href === "/announcements" && hasRecentAnnouncement && (
+                {item.href === "/announcements" && unreadAnnouncements > 0 && (
                   <span
-                    className="ml-auto w-2 h-2 bg-destructive rounded-full"
-                    data-testid="nav-announcements-dot"
-                  />
+                    className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/15 px-1.5 text-xs font-semibold text-primary"
+                    data-testid="nav-announcements-badge"
+                  >
+                    {unreadBadge}
+                  </span>
                 )}
               </Link>
             );
@@ -146,8 +171,13 @@ export default function Layout({ children }: LayoutProps) {
               data-testid="button-notifications-mobile"
             >
               <Bell className="w-5 h-5" />
-              {hasRecentAnnouncement && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border-2 border-card"></span>
+              {unreadAnnouncements > 0 && (
+                <span
+                  className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground border-2 border-card"
+                  data-testid="nav-announcements-badge-mobile"
+                >
+                  {unreadBadge}
+                </span>
               )}
             </button>
             <Button variant="ghost" size="icon" className="text-foreground" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>

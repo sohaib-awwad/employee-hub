@@ -48,7 +48,8 @@ import type {
   ListAttendanceParams,
   ListHolidaysParams,
   LoginInput,
-  RequestInput
+  RequestInput,
+  TodayAttendance
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -528,11 +529,11 @@ export const getGetTodayAttendanceUrl = () => {
 }
 
 /**
- * @summary Get today's attendance record
+ * @summary Get today's attendance record (with breaks)
  */
-export const getTodayAttendance = async ( options?: RequestInit): Promise<AttendanceRecord> => {
+export const getTodayAttendance = async ( options?: RequestInit): Promise<TodayAttendance> => {
 
-  return customFetch<AttendanceRecord>(getGetTodayAttendanceUrl(),
+  return customFetch<TodayAttendance>(getGetTodayAttendanceUrl(),
   {
     ...options,
     method: 'GET'
@@ -575,7 +576,7 @@ export type GetTodayAttendanceQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Get today's attendance record
+ * @summary Get today's attendance record (with breaks)
  */
 
 export function useGetTodayAttendance<TData = Awaited<ReturnType<typeof getTodayAttendance>>, TError = ErrorType<unknown>>(
@@ -734,6 +735,146 @@ export const usePunchOut = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getPunchOutMutationOptions(options));
+    }
+
+export const getStartBreakUrl = () => {
+
+
+
+
+  return `/api/attendance/break/start`
+}
+
+/**
+ * @summary Start a break (only after punching in)
+ */
+export const startBreak = async ( options?: RequestInit): Promise<TodayAttendance> => {
+
+  return customFetch<TodayAttendance>(getStartBreakUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getStartBreakMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startBreak>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startBreak>>, TError,void, TContext> => {
+
+const mutationKey = ['startBreak'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startBreak>>, void> = () => {
+
+
+          return  startBreak(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartBreakMutationResult = NonNullable<Awaited<ReturnType<typeof startBreak>>>
+
+    export type StartBreakMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Start a break (only after punching in)
+ */
+export const useStartBreak = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startBreak>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startBreak>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getStartBreakMutationOptions(options));
+    }
+
+export const getEndBreakUrl = () => {
+
+
+
+
+  return `/api/attendance/break/end`
+}
+
+/**
+ * @summary End the current break
+ */
+export const endBreak = async ( options?: RequestInit): Promise<TodayAttendance> => {
+
+  return customFetch<TodayAttendance>(getEndBreakUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getEndBreakMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endBreak>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof endBreak>>, TError,void, TContext> => {
+
+const mutationKey = ['endBreak'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof endBreak>>, void> = () => {
+
+
+          return  endBreak(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EndBreakMutationResult = NonNullable<Awaited<ReturnType<typeof endBreak>>>
+
+    export type EndBreakMutationError = ErrorType<unknown>
+
+    /**
+ * @summary End the current break
+ */
+export const useEndBreak = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof endBreak>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof endBreak>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getEndBreakMutationOptions(options));
     }
 
 export const getListLeavesUrl = () => {

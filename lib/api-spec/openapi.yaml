@@ -127,14 +127,14 @@ paths:
     get:
       operationId: getTodayAttendance
       tags: [attendance]
-      summary: Get today's attendance record
+      summary: Get today's attendance record (with breaks)
       responses:
         "200":
           description: Today's attendance
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AttendanceRecord"
+                $ref: "#/components/schemas/TodayAttendance"
 
   /attendance/punch-in:
     post:
@@ -161,6 +161,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AttendanceRecord"
+
+  /attendance/break/start:
+    post:
+      operationId: startBreak
+      tags: [attendance]
+      summary: Start a break (only after punching in)
+      responses:
+        "200":
+          description: Break started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodayAttendance"
+
+  /attendance/break/end:
+    post:
+      operationId: endBreak
+      tags: [attendance]
+      summary: End the current break
+      responses:
+        "200":
+          description: Break ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TodayAttendance"
 
   /leaves:
     get:
@@ -287,6 +313,11 @@ paths:
           in: query
           schema:
             type: ["string", "null"]
+        - name: maxAgeDays
+          in: query
+          description: Only include announcements published within this many days.
+          schema:
+            type: ["integer", "null"]
       responses:
         "200":
           description: Announcements list
@@ -732,6 +763,32 @@ components:
           type: ["number", "null"]
         note:
           type: ["string", "null"]
+
+    AttendanceBreak:
+      type: object
+      required: [id, startTime]
+      properties:
+        id:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+
+    TodayAttendance:
+      allOf:
+        - $ref: "#/components/schemas/AttendanceRecord"
+        - type: object
+          required: [breaks, onBreak, breakMinutes]
+          properties:
+            breaks:
+              type: array
+              items:
+                $ref: "#/components/schemas/AttendanceBreak"
+            onBreak:
+              type: boolean
+            breakMinutes:
+              type: integer
 
     LeaveRequest:
       type: object

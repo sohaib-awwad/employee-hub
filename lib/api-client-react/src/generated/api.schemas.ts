@@ -78,6 +78,19 @@ export interface AttendanceRecord {
   note?: string | null;
 }
 
+export interface AttendanceBreak {
+  id: number;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+}
+
+export type TodayAttendance = AttendanceRecord & {
+  breaks: AttendanceBreak[];
+  onBreak: boolean;
+  breakMinutes: number;
+};
+
 export type LeaveRequestType = typeof LeaveRequestType[keyof typeof LeaveRequestType];
 
 
@@ -488,6 +501,11 @@ priority?: ListAnnouncementsPriority;
  * @nullable
  */
 q?: string | null;
+/**
+ * Only include announcements published within this many days.
+ * @nullable
+ */
+maxAgeDays?: number | null;
 };
 
 export type ListAnnouncementsType = typeof ListAnnouncementsType[keyof typeof ListAnnouncementsType] | null;

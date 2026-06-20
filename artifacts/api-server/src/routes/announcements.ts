@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { announcementsTable } from "@workspace/db";
 import { desc } from "drizzle-orm";
+import { format, subDays } from "date-fns";
 import { requireAuth } from "../middlewares/auth";
 
 const PAGE_SIZE = 6;
@@ -13,6 +14,7 @@ router.get("/announcements", requireAuth, async (req, res) => {
     const type = req.query.type as string | undefined;
     const priority = req.query.priority as string | undefined;
     const q = (req.query.q as string | undefined)?.trim().toLowerCase();
+    const maxAgeDays = req.query.maxAgeDays ? parseInt(req.query.maxAgeDays as string) : undefined;
     const page = req.query.page ? parseInt(req.query.page as string) : 1;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : PAGE_SIZE;
     const offset = (page - 1) * limit;
@@ -21,6 +23,13 @@ router.get("/announcements", requireAuth, async (req, res) => {
       .select()
       .from(announcementsTable)
       .orderBy(desc(announcementsTable.publishedAt));
+
+    // Hide anything published longer ago than the requested window (e.g. the
+    // employee page only shows the last 90 days).
+    if (maxAgeDays && maxAgeDays > 0) {
+      const cutoff = format(subDays(new Date(), maxAgeDays), "yyyy-MM-dd");
+      all = all.filter(a => a.publishedAt >= cutoff);
+    }
 
     // Priority + search are applied first so the tab counts reflect them.
     if (priority && (priority === "low" || priority === "medium" || priority === "high")) {

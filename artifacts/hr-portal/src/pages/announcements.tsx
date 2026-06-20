@@ -31,6 +31,8 @@ export default function Announcements() {
     limit: PAGE_SIZE,
     priority: priority === "all" ? undefined : (priority as "low" | "medium" | "high"),
     q: search || undefined,
+    // Employees only see announcements from the last 90 days.
+    maxAgeDays: 90,
   };
   const { data, isLoading } = useListAnnouncements(params, {
     query: { queryKey: getListAnnouncementsQueryKey(params) }

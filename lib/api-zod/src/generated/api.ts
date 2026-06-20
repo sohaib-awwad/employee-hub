@@ -99,7 +99,7 @@ export const ListAttendanceResponse = zod.array(ListAttendanceResponseItem)
 
 
 /**
- * @summary Get today's attendance record
+ * @summary Get today's attendance record (with breaks)
  */
 export const GetTodayAttendanceResponse = zod.object({
   "id": zod.number(),
@@ -109,7 +109,15 @@ export const GetTodayAttendanceResponse = zod.object({
   "status": zod.enum(['present', 'absent', 'half_day', 'on_leave', 'holiday', 'weekend']),
   "hoursWorked": zod.number().nullish(),
   "note": zod.string().nullish()
-})
+}).and(zod.object({
+  "breaks": zod.array(zod.object({
+  "id": zod.number(),
+  "startTime": zod.string(),
+  "endTime": zod.string().nullish()
+})),
+  "onBreak": zod.boolean(),
+  "breakMinutes": zod.number()
+}))
 
 
 /**
@@ -138,6 +146,50 @@ export const PunchOutResponse = zod.object({
   "hoursWorked": zod.number().nullish(),
   "note": zod.string().nullish()
 })
+
+
+/**
+ * @summary Start a break (only after punching in)
+ */
+export const StartBreakResponse = zod.object({
+  "id": zod.number(),
+  "date": zod.string(),
+  "punchIn": zod.string().nullish(),
+  "punchOut": zod.string().nullish(),
+  "status": zod.enum(['present', 'absent', 'half_day', 'on_leave', 'holiday', 'weekend']),
+  "hoursWorked": zod.number().nullish(),
+  "note": zod.string().nullish()
+}).and(zod.object({
+  "breaks": zod.array(zod.object({
+  "id": zod.number(),
+  "startTime": zod.string(),
+  "endTime": zod.string().nullish()
+})),
+  "onBreak": zod.boolean(),
+  "breakMinutes": zod.number()
+}))
+
+
+/**
+ * @summary End the current break
+ */
+export const EndBreakResponse = zod.object({
+  "id": zod.number(),
+  "date": zod.string(),
+  "punchIn": zod.string().nullish(),
+  "punchOut": zod.string().nullish(),
+  "status": zod.enum(['present', 'absent', 'half_day', 'on_leave', 'holiday', 'weekend']),
+  "hoursWorked": zod.number().nullish(),
+  "note": zod.string().nullish()
+}).and(zod.object({
+  "breaks": zod.array(zod.object({
+  "id": zod.number(),
+  "startTime": zod.string(),
+  "endTime": zod.string().nullish()
+})),
+  "onBreak": zod.boolean(),
+  "breakMinutes": zod.number()
+}))
 
 
 /**
@@ -316,7 +368,8 @@ export const ListAnnouncementsQueryParams = zod.object({
   "page": zod.coerce.number().nullish(),
   "limit": zod.coerce.number().nullish(),
   "priority": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
-  "q": zod.coerce.string().nullish()
+  "q": zod.coerce.string().nullish(),
+  "maxAgeDays": zod.coerce.number().nullish().describe('Only include announcements published within this many days.')
 })
 
 export const ListAnnouncementsResponse = zod.object({

@@ -29,4 +29,9 @@ priority?: ListAnnouncementsPriority;
  * @nullable
  */
 q?: string | null;
+/**
+ * Only include announcements published within this many days.
+ * @nullable
+ */
+maxAgeDays?: number | null;
 };

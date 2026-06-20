@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListAttendance, getListAttendanceQueryKey, useGetTodayAttendance, getGetTodayAttendanceQueryKey, usePunchIn, usePunchOut } from "@workspace/api-client-react";
+import { useListAttendance, getListAttendanceQueryKey, useGetTodayAttendance, getGetTodayAttendanceQueryKey, usePunchIn, usePunchOut, useStartBreak, useEndBreak, type TodayAttendance } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RequestDialog } from "@/components/request-dialog";
+import { TablePagination } from "@/components/table-pagination";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { format, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, Search, MoreVertical, Loader2, PencilLine, ChevronLeft, ChevronRight } from "lucide-react";
+import { Send, Search, MoreVertical, Loader2, PencilLine, Coffee, Play } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const PAGE_SIZE = 10;
+
+// Standard break entitlement (minutes) — breaks don't count as working hours.
+const BREAK_ALLOWANCE_MIN = 60;
 
 const formatTimeStr = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -50,6 +55,37 @@ const getStatusDisplay = (record: { status: string; hoursWorked?: number | null 
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
 
+const toMin = (t: string) => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
+const minsBetween = (a: string, b: string) => Math.max(0, toMin(b) - toMin(a));
+const minutesToHm = (min: number) => {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
+
+type TimelineSegment = { type: "work" | "break"; from: string; to: string; ongoing: boolean };
+
+// Break the day into consecutive work/break blocks ("working hours from one
+// hour to the next"). `now` closes any still-open block.
+function buildTimeline(record: TodayAttendance | undefined, now: string): TimelineSegment[] {
+  const segs: TimelineSegment[] = [];
+  if (!record?.punchIn) return segs;
+  const end = record.punchOut ?? now;
+  const breaks = (record.breaks ?? []).slice().sort((a, b) => a.startTime.localeCompare(b.startTime));
+  let cursor = record.punchIn;
+  for (const b of breaks) {
+    if (b.startTime > cursor) segs.push({ type: "work", from: cursor, to: b.startTime, ongoing: false });
+    const bEnd = b.endTime ?? end;
+    segs.push({ type: "break", from: b.startTime, to: bEnd, ongoing: b.endTime == null });
+    cursor = bEnd;
+  }
+  if (cursor < end) segs.push({ type: "work", from: cursor, to: end, ongoing: !record.punchOut });
+  return segs;
+}
+
 export default function Attendance() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("all");
@@ -78,24 +114,31 @@ export default function Attendance() {
 
   const punchIn = usePunchIn();
   const punchOut = usePunchOut();
+  const startBreak = useStartBreak();
+  const endBreak = useEndBreak();
+  const { toast } = useToast();
 
-  const handlePunchIn = () => {
-    punchIn.mutate(undefined, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetTodayAttendanceQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey(params) });
-      }
-    });
+  const refreshToday = () => {
+    queryClient.invalidateQueries({ queryKey: getGetTodayAttendanceQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey(params) });
   };
 
-  const handlePunchOut = () => {
-    punchOut.mutate(undefined, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetTodayAttendanceQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getListAttendanceQueryKey(params) });
-      }
-    });
+  const handlePunchIn = () => punchIn.mutate(undefined, { onSuccess: refreshToday });
+  const handlePunchOut = () => punchOut.mutate(undefined, { onSuccess: refreshToday });
+
+  const apiError = (error: unknown, fallback: string) => {
+    const data = (error as { data?: unknown } | null)?.data;
+    const msg = data && typeof data === "object" ? (data as { error?: unknown }).error : undefined;
+    return typeof msg === "string" && msg.trim() ? msg : fallback;
   };
+  const handleStartBreak = () => startBreak.mutate(undefined, {
+    onSuccess: refreshToday,
+    onError: (e) => toast({ title: "Couldn't start break", description: apiError(e, "Please try again."), variant: "destructive" }),
+  });
+  const handleEndBreak = () => endBreak.mutate(undefined, {
+    onSuccess: refreshToday,
+    onError: (e) => toast({ title: "Couldn't end break", description: apiError(e, "Please try again."), variant: "destructive" }),
+  });
 
   const filtered = (history ?? []).filter((r) => {
     if (searchDate && !r.date.includes(searchDate)) return false;
@@ -115,6 +158,16 @@ export default function Attendance() {
     fn();
     setPage(1);
   };
+
+  // Today's break/timeline state (todayRecord now carries breaks + derived flags).
+  const nowStr = format(new Date(), "HH:mm");
+  const timeline = buildTimeline(todayRecord, nowStr);
+  const breakMinutes = todayRecord?.breakMinutes ?? 0;
+  const onBreak = todayRecord?.onBreak ?? false;
+  const breakBusy = startBreak.isPending || endBreak.isPending;
+  const workedMinutes = timeline
+    .filter((s) => s.type === "work")
+    .reduce((sum, s) => sum + minsBetween(s.from, s.to), 0);
 
   return (
     <motion.div
@@ -157,21 +210,109 @@ export default function Attendance() {
         </Card>
       )}
       {!todayLoading && todayRecord?.punchIn && !todayRecord?.punchOut && (
-        <Card className="border-success/30 bg-success/10">
-          <CardContent className="p-4 flex items-center justify-between gap-4">
-            <p className="text-sm font-medium text-success">
-              Punched in at {formatTimeStr(todayRecord.punchIn)} — remember to punch out before you leave.
-            </p>
-            <Button
-              variant="outline"
-              className="border-primary text-primary hover:bg-accent gap-2"
-              onClick={handlePunchOut}
-              disabled={punchOut.isPending}
-              data-testid="button-punch-out"
-            >
-              {punchOut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              Punch Out
-            </Button>
+        <Card className={onBreak ? "border-warning/40 bg-warning/10" : "border-success/30 bg-success/10"}>
+          <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <p className={`text-sm font-medium ${onBreak ? "text-warning" : "text-success"}`}>
+                {onBreak
+                  ? "You're on a break — work hours are paused."
+                  : `Punched in at ${formatTimeStr(todayRecord.punchIn)} — remember to punch out before you leave.`}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Break taken:{" "}
+                <span className="font-semibold text-foreground tabular-nums">{minutesToHm(breakMinutes)}</span> of {minutesToHm(BREAK_ALLOWANCE_MIN)}
+                {breakMinutes < BREAK_ALLOWANCE_MIN ? ` · ${minutesToHm(BREAK_ALLOWANCE_MIN - breakMinutes)} left` : " · complete"}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {onBreak ? (
+                <Button
+                  className="bg-warning text-warning-foreground hover:bg-warning/90 gap-2"
+                  onClick={handleEndBreak}
+                  disabled={breakBusy}
+                  data-testid="button-end-break"
+                >
+                  {endBreak.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                  Resume Work
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="border-warning/40 text-warning hover:bg-warning/10 gap-2"
+                  onClick={handleStartBreak}
+                  disabled={breakBusy}
+                  data-testid="button-start-break"
+                >
+                  {startBreak.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Coffee className="w-4 h-4" />}
+                  Start Break
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="border-primary text-primary hover:bg-accent gap-2"
+                onClick={handlePunchOut}
+                disabled={punchOut.isPending}
+                data-testid="button-punch-out"
+              >
+                {punchOut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Punch Out
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Today's hours — work/break blocks through the day */}
+      {!todayLoading && todayRecord?.punchIn && (
+        <Card className="border-border shadow-sm overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b border-border">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">Today's Hours</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Your working hours from one block to the next — breaks don't count towards work time.
+                </p>
+              </div>
+              <div className="flex gap-4 text-xs">
+                <div className="text-muted-foreground">
+                  Worked <span className="font-semibold text-foreground tabular-nums">{minutesToHm(workedMinutes)}</span>
+                </div>
+                <div className="text-muted-foreground">
+                  Break <span className="font-semibold text-foreground tabular-nums">{minutesToHm(breakMinutes)}</span> / {minutesToHm(BREAK_ALLOWANCE_MIN)}
+                </div>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/50">
+                    {["From", "To", "Type", "Duration"].map((c) => (
+                      <th key={c} className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">{c}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {timeline.length === 0 ? (
+                    <tr><td colSpan={4} className="px-5 py-8 text-center text-muted-foreground text-sm">No activity yet.</td></tr>
+                  ) : (
+                    timeline.map((s, i) => (
+                      <tr key={i} className="hover:bg-muted/50" data-testid={`row-timeline-${i}`}>
+                        <td className="px-5 py-3 text-foreground tabular-nums">{formatTimeStr(s.from)}</td>
+                        <td className="px-5 py-3 tabular-nums">
+                          {s.ongoing ? <span className="text-muted-foreground">now</span> : <span className="text-foreground">{formatTimeStr(s.to)}</span>}
+                        </td>
+                        <td className="px-5 py-3">
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${s.type === "break" ? "bg-warning/15 text-warning" : "bg-success/15 text-success"}`}>
+                            {s.type === "break" ? "Break" : "Working"}{s.ongoing ? " · ongoing" : ""}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground tabular-nums">{minutesToHm(minsBetween(s.from, s.to))}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -298,43 +439,10 @@ export default function Attendance() {
             </table>
           </div>
 
-          {/* Footer with real pagination */}
-          {!historyLoading && filtered.length > 0 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-border text-xs text-muted-foreground">
-              <span>
-                Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, filtered.length)} of {filtered.length}
-              </span>
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7 border-border"
-                    disabled={currentPage === 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    data-testid="button-prev-page"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <span className="font-medium text-foreground">
-                    {currentPage} / {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7 border-border"
-                    disabled={currentPage === totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    data-testid="button-next-page"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      <TablePagination page={currentPage} pageSize={PAGE_SIZE} total={filtered.length} onPageChange={setPage} />
 
       <RequestDialog
         type="attendance"
