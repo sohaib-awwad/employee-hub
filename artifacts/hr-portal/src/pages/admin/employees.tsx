@@ -32,9 +32,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { TablePagination } from "@/components/table-pagination";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
+import { AttendanceReportDialog } from "@/components/attendance-report-dialog";
 
 const PAGE_SIZE = 10;
 
@@ -57,6 +58,7 @@ export default function AdminEmployees() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Employee | null>(null);
   const [deleting, setDeleting] = useState<Employee | null>(null);
+  const [reporting, setReporting] = useState<Employee | null>(null);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const debouncedQ = useDebouncedValue(q.trim(), 300);
@@ -208,6 +210,7 @@ export default function AdminEmployees() {
                     </td>
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setReporting(e)} title="Print attendance sheet" data-testid={`button-report-${e.id}`}><Printer className="w-4 h-4" /></Button>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={() => openEdit(e)} data-testid={`button-edit-${e.id}`}><Pencil className="w-4 h-4" /></Button>
                         <Button
                           size="icon"
@@ -314,6 +317,12 @@ export default function AdminEmployees() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AttendanceReportDialog
+        employee={reporting}
+        open={reporting !== null}
+        onOpenChange={(open) => !open && setReporting(null)}
+      />
     </div>
   );
 }

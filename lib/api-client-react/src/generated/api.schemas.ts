@@ -447,6 +447,97 @@ export interface AdminAttendancePage {
   totalEmployees: number;
 }
 
+export interface AttendanceReportEmployee {
+  id: number;
+  name: string;
+  email: string;
+  department: string;
+  position: string;
+  /** @nullable */
+  gender?: string | null;
+  joinDate: string;
+}
+
+export interface AttendanceReportSummary {
+  calendarDays: number;
+  workingDays: number;
+  weekendDays: number;
+  daysWorked: number;
+  halfDays: number;
+  absentDays: number;
+  onLeaveDays: number;
+  holidays: number;
+  holidaysRecorded: number;
+  holidaysNotRecorded: number;
+  totalHoursWorked: number;
+  attendanceRate: number;
+}
+
+export interface AttendanceReportDay {
+  date: string;
+  weekday: string;
+  status: string;
+  /** @nullable */
+  punchIn?: string | null;
+  /** @nullable */
+  punchOut?: string | null;
+  /** @nullable */
+  hoursWorked?: number | null;
+  /** @nullable */
+  holidayName?: string | null;
+  /** @nullable */
+  note?: string | null;
+}
+
+export interface AttendanceReportHoliday {
+  date: string;
+  name: string;
+  type: string;
+  recorded: boolean;
+}
+
+export interface AttendanceReportLeaveBalanceItem {
+  type: string;
+  total: number;
+  used: number;
+  remaining: number;
+}
+
+export interface AttendanceReportLeaveTaken {
+  type: string;
+  days: number;
+}
+
+export interface AttendanceReportLeaveEntry {
+  type: string;
+  startDate: string;
+  endDate: string;
+  days: number;
+  status: string;
+}
+
+export interface AttendanceReportLeave {
+  balance: AttendanceReportLeaveBalanceItem[];
+  takenInPeriod: AttendanceReportLeaveTaken[];
+  entries: AttendanceReportLeaveEntry[];
+}
+
+export interface AttendanceReportPeriod {
+  from: string;
+  to: string;
+}
+
+export interface AttendanceReport {
+  employee: AttendanceReportEmployee;
+  period: AttendanceReportPeriod;
+  generatedAt: string;
+  generatedBy: string;
+  summary: AttendanceReportSummary;
+  days: AttendanceReportDay[];
+  holidays: AttendanceReportHoliday[];
+  leave: AttendanceReportLeave;
+}
+
 export interface AdminOverview {
   pendingLeaves: number;
   pendingRequests: number;
@@ -604,4 +695,16 @@ export const AdminListAttendanceTodaySort = {
   punchIn: 'punchIn',
   status: 'status',
 } as const;
+
+export type AdminGetEmployeeAttendanceReportParams = {
+employeeId: number;
+/**
+ * Inclusive start date (YYYY-MM-DD); not before the employee's join date.
+ */
+from: string;
+/**
+ * Inclusive end date (YYYY-MM-DD); not after today.
+ */
+to: string;
+};
 

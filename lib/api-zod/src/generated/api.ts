@@ -797,3 +797,80 @@ export const AdminListAttendanceTodayResponse = zod.object({
 })
 
 
+/**
+ * @summary Attendance + leave report for one employee over a date range
+ */
+export const AdminGetEmployeeAttendanceReportQueryParams = zod.object({
+  "employeeId": zod.coerce.number(),
+  "from": zod.coerce.string().describe('Inclusive start date (YYYY-MM-DD); not before the employee\'s join date.'),
+  "to": zod.coerce.string().describe('Inclusive end date (YYYY-MM-DD); not after today.')
+})
+
+export const AdminGetEmployeeAttendanceReportResponse = zod.object({
+  "employee": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "email": zod.string(),
+  "department": zod.string(),
+  "position": zod.string(),
+  "gender": zod.string().nullish(),
+  "joinDate": zod.string()
+}),
+  "period": zod.object({
+  "from": zod.string(),
+  "to": zod.string()
+}),
+  "generatedAt": zod.string(),
+  "generatedBy": zod.string(),
+  "summary": zod.object({
+  "calendarDays": zod.number(),
+  "workingDays": zod.number(),
+  "weekendDays": zod.number(),
+  "daysWorked": zod.number(),
+  "halfDays": zod.number(),
+  "absentDays": zod.number(),
+  "onLeaveDays": zod.number(),
+  "holidays": zod.number(),
+  "holidaysRecorded": zod.number(),
+  "holidaysNotRecorded": zod.number(),
+  "totalHoursWorked": zod.number(),
+  "attendanceRate": zod.number()
+}),
+  "days": zod.array(zod.object({
+  "date": zod.string(),
+  "weekday": zod.string(),
+  "status": zod.string(),
+  "punchIn": zod.string().nullish(),
+  "punchOut": zod.string().nullish(),
+  "hoursWorked": zod.number().nullish(),
+  "holidayName": zod.string().nullish(),
+  "note": zod.string().nullish()
+})),
+  "holidays": zod.array(zod.object({
+  "date": zod.string(),
+  "name": zod.string(),
+  "type": zod.string(),
+  "recorded": zod.boolean()
+})),
+  "leave": zod.object({
+  "balance": zod.array(zod.object({
+  "type": zod.string(),
+  "total": zod.number(),
+  "used": zod.number(),
+  "remaining": zod.number()
+})),
+  "takenInPeriod": zod.array(zod.object({
+  "type": zod.string(),
+  "days": zod.number()
+})),
+  "entries": zod.array(zod.object({
+  "type": zod.string(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "days": zod.number(),
+  "status": zod.string()
+}))
+})
+})
+
+

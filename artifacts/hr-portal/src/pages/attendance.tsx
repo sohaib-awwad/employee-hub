@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "wouter";
 import { useListAttendance, getListAttendanceQueryKey, useGetTodayAttendance, getGetTodayAttendanceQueryKey, usePunchIn, usePunchOut, useStartBreak, useEndBreak, type TodayAttendance } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,10 @@ const PAGE_SIZE = 10;
 
 // Standard break entitlement (minutes) — breaks don't count as working hours.
 const BREAK_ALLOWANCE_MIN = 60;
+
+// Hard cap on a single shift (minutes). The server auto punches-out at this
+// point; the UI caps the live timer here too so it can't display more.
+const MAX_WORK_MIN = 12 * 60;
 
 const formatTimeStr = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -73,7 +78,20 @@ type TimelineSegment = { type: "work" | "break"; from: string; to: string; ongoi
 function buildTimeline(record: TodayAttendance | undefined, now: string): TimelineSegment[] {
   const segs: TimelineSegment[] = [];
   if (!record?.punchIn) return segs;
-  const end = record.punchOut ?? now;
+  // Cap an open shift at the 12h limit so the live timer stops there, matching
+  // the server's auto punch-out (same-day shifts only — the common case).
+  let end = record.punchOut ?? now;
+  let capped = false;
+  if (!record.punchOut) {
+    const capMin = toMin(record.punchIn) + MAX_WORK_MIN;
+    if (capMin <= 23 * 60 + 59 && toMin(now) >= capMin) {
+      end = `${String(Math.floor(capMin / 60)).padStart(2, "0")}:${String(capMin % 60).padStart(2, "0")}`;
+      capped = true;
+    }
+  }
+  // Once capped, the shift is effectively over (pending the server's punch-out),
+  // so the trailing block is no longer "ongoing".
+  const stillOpen = !record.punchOut && !capped;
   const breaks = (record.breaks ?? []).slice().sort((a, b) => a.startTime.localeCompare(b.startTime));
   let cursor = record.punchIn;
   for (const b of breaks) {
@@ -82,7 +100,7 @@ function buildTimeline(record: TodayAttendance | undefined, now: string): Timeli
     segs.push({ type: "break", from: b.startTime, to: bEnd, ongoing: b.endTime == null });
     cursor = bEnd;
   }
-  if (cursor < end) segs.push({ type: "work", from: cursor, to: end, ongoing: !record.punchOut });
+  if (cursor < end) segs.push({ type: "work", from: cursor, to: end, ongoing: stillOpen });
   return segs;
 }
 
@@ -94,6 +112,18 @@ export default function Attendance({ embedded = false }: { embedded?: boolean })
   const [attendanceReqOpen, setAttendanceReqOpen] = useState(false);
   const [correctionOpen, setCorrectionOpen] = useState(false);
   const [correctionDate, setCorrectionDate] = useState<string | undefined>(undefined);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Opened from the Quick Actions menu (/attendance?new=1) — auto-open the
+  // Send Attendance Request dialog, then drop the param. Skipped when embedded
+  // in the admin Attendance page (that view isn't a Quick Actions target).
+  useEffect(() => {
+    if (!embedded && searchParams.get("new") === "1") {
+      setAttendanceReqOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, embedded]);
 
   const openCorrection = (date: string) => {
     setCorrectionDate(date);
@@ -185,7 +215,7 @@ export default function Attendance({ embedded = false }: { embedded?: boolean })
           </div>
         )}
         <Button
-          className="bg-primary hover:bg-primary/90 text-white gap-2 self-start sm:self-auto"
+          className="bg-primary hover:bg-primary/90 gap-2 self-start sm:self-auto"
           onClick={() => setAttendanceReqOpen(true)}
           data-testid="button-send-attendance-request"
         >
@@ -200,7 +230,7 @@ export default function Attendance({ embedded = false }: { embedded?: boolean })
           <CardContent className="p-4 flex items-center justify-between gap-4">
             <p className="text-sm font-medium text-foreground">You haven't punched in today yet.</p>
             <Button
-              className="bg-primary hover:bg-primary/90 text-white gap-2"
+              className="bg-primary hover:bg-primary/90 gap-2"
               onClick={handlePunchIn}
               disabled={punchIn.isPending}
               data-testid="button-punch-in"

@@ -25,6 +25,7 @@ import type {
   AdminEmployeeInput,
   AdminEmployeeUpdate,
   AdminEmployeesPage,
+  AdminGetEmployeeAttendanceReportParams,
   AdminLeavesPage,
   AdminListAttendanceTodayParams,
   AdminListEmployeesParams,
@@ -36,6 +37,7 @@ import type {
   AnnouncementItem,
   AnnouncementsPage,
   AttendanceRecord,
+  AttendanceReport,
   DashboardSummary,
   Employee,
   EmployeeRequest,
@@ -2676,6 +2678,90 @@ export function useAdminListAttendanceToday<TData = Awaited<ReturnType<typeof ad
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getAdminListAttendanceTodayQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getAdminGetEmployeeAttendanceReportUrl = (params: AdminGetEmployeeAttendanceReportParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/attendance-report?${stringifiedParams}` : `/api/admin/attendance-report`
+}
+
+/**
+ * @summary Attendance + leave report for one employee over a date range
+ */
+export const adminGetEmployeeAttendanceReport = async (params: AdminGetEmployeeAttendanceReportParams, options?: RequestInit): Promise<AttendanceReport> => {
+
+  return customFetch<AttendanceReport>(getAdminGetEmployeeAttendanceReportUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminGetEmployeeAttendanceReportQueryKey = (params?: AdminGetEmployeeAttendanceReportParams,) => {
+    return [
+    `/api/admin/attendance-report`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAdminGetEmployeeAttendanceReportQueryOptions = <TData = Awaited<ReturnType<typeof adminGetEmployeeAttendanceReport>>, TError = ErrorType<unknown>>(params: AdminGetEmployeeAttendanceReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminGetEmployeeAttendanceReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminGetEmployeeAttendanceReportQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminGetEmployeeAttendanceReport>>> = ({ signal }) => adminGetEmployeeAttendanceReport(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminGetEmployeeAttendanceReport>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminGetEmployeeAttendanceReportQueryResult = NonNullable<Awaited<ReturnType<typeof adminGetEmployeeAttendanceReport>>>
+export type AdminGetEmployeeAttendanceReportQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Attendance + leave report for one employee over a date range
+ */
+
+export function useAdminGetEmployeeAttendanceReport<TData = Awaited<ReturnType<typeof adminGetEmployeeAttendanceReport>>, TError = ErrorType<unknown>>(
+ params: AdminGetEmployeeAttendanceReportParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminGetEmployeeAttendanceReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminGetEmployeeAttendanceReportQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -5,6 +5,7 @@ packages:
   - scripts
 
 allowBuilds:
+  core-js: set this to true or false
   esbuild: true
 
 autoInstallPeers: false
@@ -41,6 +42,10 @@ minimumReleaseAgeExclude:
 
 onlyBuiltDependencies:
   - '@swc/core'
+  # core-js (pulled in transitively by jspdf) only has a funding-message
+  # postinstall; listing it here lets pnpm run it so install doesn't fail with
+  # ERR_PNPM_IGNORED_BUILDS.
+  - core-js
   - esbuild
   - msw
   - unrs-resolver

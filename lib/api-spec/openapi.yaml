@@ -694,6 +694,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminAttendancePage"
 
+  /admin/attendance-report:
+    get:
+      operationId: adminGetEmployeeAttendanceReport
+      tags: [admin]
+      summary: Attendance + leave report for one employee over a date range
+      parameters:
+        - name: employeeId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: from
+          in: query
+          required: true
+          description: Inclusive start date (YYYY-MM-DD); not before the employee's join date.
+          schema:
+            type: string
+        - name: to
+          in: query
+          required: true
+          description: Inclusive end date (YYYY-MM-DD); not after today.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The employee's attendance report for the period
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceReport"
+
 components:
   schemas:
     HealthStatus:
@@ -1166,6 +1197,188 @@ components:
           type: integer
         totalEmployees:
           type: integer
+
+    AttendanceReportEmployee:
+      type: object
+      required: [id, name, email, department, position, joinDate]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        position:
+          type: string
+        gender:
+          type: ["string", "null"]
+        joinDate:
+          type: string
+
+    AttendanceReportSummary:
+      type: object
+      required:
+        - calendarDays
+        - workingDays
+        - weekendDays
+        - daysWorked
+        - halfDays
+        - absentDays
+        - onLeaveDays
+        - holidays
+        - holidaysRecorded
+        - holidaysNotRecorded
+        - totalHoursWorked
+        - attendanceRate
+      properties:
+        calendarDays:
+          type: integer
+        workingDays:
+          type: integer
+        weekendDays:
+          type: integer
+        daysWorked:
+          type: integer
+        halfDays:
+          type: integer
+        absentDays:
+          type: integer
+        onLeaveDays:
+          type: integer
+        holidays:
+          type: integer
+        holidaysRecorded:
+          type: integer
+        holidaysNotRecorded:
+          type: integer
+        totalHoursWorked:
+          type: number
+        attendanceRate:
+          type: integer
+
+    AttendanceReportDay:
+      type: object
+      required: [date, weekday, status]
+      properties:
+        date:
+          type: string
+        weekday:
+          type: string
+        status:
+          type: string
+        punchIn:
+          type: ["string", "null"]
+        punchOut:
+          type: ["string", "null"]
+        hoursWorked:
+          type: ["number", "null"]
+        holidayName:
+          type: ["string", "null"]
+        note:
+          type: ["string", "null"]
+
+    AttendanceReportHoliday:
+      type: object
+      required: [date, name, type, recorded]
+      properties:
+        date:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        recorded:
+          type: boolean
+
+    AttendanceReportLeaveBalanceItem:
+      type: object
+      required: [type, total, used, remaining]
+      properties:
+        type:
+          type: string
+        total:
+          type: number
+        used:
+          type: number
+        remaining:
+          type: number
+
+    AttendanceReportLeaveTaken:
+      type: object
+      required: [type, days]
+      properties:
+        type:
+          type: string
+        days:
+          type: number
+
+    AttendanceReportLeaveEntry:
+      type: object
+      required: [type, startDate, endDate, days, status]
+      properties:
+        type:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        days:
+          type: number
+        status:
+          type: string
+
+    AttendanceReportLeave:
+      type: object
+      required: [balance, takenInPeriod, entries]
+      properties:
+        balance:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceReportLeaveBalanceItem"
+        takenInPeriod:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceReportLeaveTaken"
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceReportLeaveEntry"
+
+    AttendanceReportPeriod:
+      type: object
+      required: [from, to]
+      properties:
+        from:
+          type: string
+        to:
+          type: string
+
+    AttendanceReport:
+      type: object
+      required: [employee, period, generatedAt, generatedBy, summary, days, holidays, leave]
+      properties:
+        employee:
+          $ref: "#/components/schemas/AttendanceReportEmployee"
+        period:
+          $ref: "#/components/schemas/AttendanceReportPeriod"
+        generatedAt:
+          type: string
+        generatedBy:
+          type: string
+        summary:
+          $ref: "#/components/schemas/AttendanceReportSummary"
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceReportDay"
+        holidays:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceReportHoliday"
+        leave:
+          $ref: "#/components/schemas/AttendanceReportLeave"
 
     AdminOverview:
       type: object

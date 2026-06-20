@@ -131,7 +131,9 @@ export default function Dashboard() {
   } else if (todayAttendance.punchIn && !todayAttendance.punchOut) {
     const [ih, im] = todayAttendance.punchIn.split(":").map(Number);
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    workedMinutes = Math.max(0, nowMinutes - (ih * 60 + im));
+    // Cap the live counter at the 12h limit — the server auto-punches-out then,
+    // so the timer can't keep climbing if someone forgets to punch out.
+    workedMinutes = Math.min(12 * 60, Math.max(0, nowMinutes - (ih * 60 + im)));
   }
 
   const standardDay = 8 * 60;
@@ -216,7 +218,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-4">
               {!hasPunchedIn ? (
                 <Button
-                  className="bg-primary hover:bg-primary/90 text-white font-semibold px-6 gap-2"
+                  className="bg-primary hover:bg-primary/90 font-semibold px-6 gap-2"
                   onClick={handlePunchIn}
                   disabled={punchIn.isPending}
                   data-testid="button-punch-in"
@@ -308,7 +310,7 @@ export default function Dashboard() {
                 )}
               </div>
               <Link href="/leave-requests">
-                <Button className="w-full mt-4 bg-primary hover:bg-primary/90 text-white text-sm font-semibold gap-2" data-testid="button-request-leave">
+                <Button className="w-full mt-4 bg-primary hover:bg-primary/90 text-sm font-semibold gap-2" data-testid="button-request-leave">
                   <ChevronRight className="w-4 h-4" />
                   Request Leave
                 </Button>
@@ -333,7 +335,7 @@ export default function Dashboard() {
                 const daysLeft = differenceInDays(date, new Date());
                 return (
                   <div key={h.id} className="flex items-start gap-4">
-                    <div className="w-12 shrink-0 text-center rounded-xl bg-primary text-white py-1.5">
+                    <div className="w-12 shrink-0 text-center rounded-xl bg-primary text-primary-foreground py-1.5">
                       <div className="text-[9px] font-semibold uppercase tracking-wide opacity-80">
                         {format(date, "MMM")}
                       </div>

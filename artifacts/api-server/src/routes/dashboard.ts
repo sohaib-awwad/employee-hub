@@ -6,6 +6,7 @@ import { format, subDays, startOfWeek } from "date-fns";
 import { requireAuth } from "../middlewares/auth";
 import { toPublicEmployee } from "../lib/employee";
 import { allowancesFor } from "../lib/leave";
+import { autoCloseIfExpired } from "../lib/attendance";
 
 function getToday(): string {
   return format(new Date(), "yyyy-MM-dd");
@@ -41,6 +42,10 @@ router.get("/dashboard", requireAuth, async (req, res) => {
         .returning();
       todayAttendance = inserted[0];
     }
+
+    // If the shift has run past the 12h cap, auto punch it out before the
+    // dashboard reports an open (and ever-growing) day.
+    todayAttendance = await autoCloseIfExpired(todayAttendance);
 
     // Leave balance
     const approvedLeaves = await db

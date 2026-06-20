@@ -4,7 +4,8 @@ import { attendanceTable, breaksTable } from "@workspace/db";
 import { eq, and, asc, desc, isNull } from "drizzle-orm";
 import { format } from "date-fns";
 import { requireAuth } from "../middlewares/auth";
-import type { Attendance, Break } from "@workspace/db";
+import { minutesBetween, totalBreakMinutes, autoCloseIfExpired } from "../lib/attendance";
+import type { Attendance } from "@workspace/db";
 
 function getToday(): string {
   return format(new Date(), "yyyy-MM-dd");
@@ -12,20 +13,6 @@ function getToday(): string {
 
 function nowHHmm(): string {
   return format(new Date(), "HH:mm");
-}
-
-function toMinutes(t: string): number {
-  const [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
-
-function minutesBetween(start: string, end: string): number {
-  return Math.max(0, toMinutes(end) - toMinutes(start));
-}
-
-// Total break minutes for the day; an in-progress break counts up to `now`.
-function totalBreakMinutes(breaks: Break[], now: string): number {
-  return breaks.reduce((sum, b) => sum + minutesBetween(b.startTime, b.endTime ?? now), 0);
 }
 
 // The shape the attendance page consumes for "today": the record plus its
@@ -66,7 +53,10 @@ async function getOrCreateToday(employeeId: number): Promise<Attendance> {
 
 router.get("/attendance/today", async (req, res) => {
   try {
-    const record = await getOrCreateToday(req.user!.id);
+    let record = await getOrCreateToday(req.user!.id);
+    // Close the shift first if it's already blown past the 12h cap, so the
+    // client never sees an open shift that should have ended.
+    record = await autoCloseIfExpired(record);
     res.json(await buildTodayPayload(record));
   } catch (err) {
     req.log.error({ err }, "Failed to get today attendance");
@@ -85,6 +75,10 @@ router.get("/attendance", async (req, res) => {
       .from(attendanceTable)
       .where(eq(attendanceTable.employeeId, employeeId))
       .orderBy(desc(attendanceTable.date));
+
+    // Auto-close any shift left open past the 12h cap (a no-op for the rest),
+    // so history never shows an unbounded open day.
+    records = await Promise.all(records.map((r) => autoCloseIfExpired(r)));
 
     if (month && year) {
       const prefix = `${year}-${String(month).padStart(2, "0")}`;
