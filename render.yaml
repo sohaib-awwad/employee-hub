@@ -1,0 +1,29 @@
+# Render Blueprint — deploys Employee Hub as a single free web service that
+# serves both the API and the built React SPA. Pair it with a free Neon
+# Postgres database (set DATABASE_URL below). See DEPLOYMENT.md for the
+# full step-by-step guide.
+services:
+  - type: web
+    name: employee-hub
+    runtime: node
+    plan: free
+    # corepack provides the pinned pnpm; install with the committed lockfile,
+    # build the frontend (BASE_PATH/PORT are read by vite at build time), then
+    # bundle the API server.
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      PORT=10000 BASE_PATH=/ NODE_ENV=production pnpm --filter @workspace/hr-portal run build &&
+      pnpm --filter @workspace/api-server run build
+    startCommand: node artifacts/api-server/dist/index.mjs
+    # The SPA root returns 200 once the server is up — a good liveness check.
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Render generates a strong random value for signing the session cookie.
+      - key: COOKIE_SECRET
+        generateValue: true
+      # Paste your Neon connection string in the Render dashboard (kept secret).
+      - key: DATABASE_URL
+        sync: false

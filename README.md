@@ -116,6 +116,13 @@ The OpenAPI spec is the contract. To add or change an endpoint:
 3. Implement the route in `artifacts/api-server/src/routes/` to match the spec.
 4. Consume the generated hook in the frontend (`artifacts/hr-portal/src`).
 
+## Deployment
+
+The app deploys as a **single service**: in production the Express server also
+serves the built React SPA, so the frontend and API share one origin and one
+URL. See **[DEPLOYMENT.md](DEPLOYMENT.md)** for a step-by-step guide to a free
+deploy on Render + Neon Postgres ([`render.yaml`](render.yaml) is included).
+
 ## License
 
 MIT
