@@ -72,6 +72,7 @@ export * from './listAnnouncementsType';
 export * from './listAttendanceParams';
 export * from './listHolidaysParams';
 export * from './loginInput';
+export * from './requestApprovalInput';
 export * from './requestInput';
 export * from './requestInputType';
 export * from './todayAttendance';

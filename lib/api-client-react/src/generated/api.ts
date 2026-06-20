@@ -50,6 +50,7 @@ import type {
   ListAttendanceParams,
   ListHolidaysParams,
   LoginInput,
+  RequestApprovalInput,
   RequestInput,
   TodayAttendance
 } from './api.schemas';
@@ -1965,14 +1966,16 @@ export const getAdminApproveRequestUrl = (id: number,) => {
 /**
  * @summary Approve an employee request
  */
-export const adminApproveRequest = async (id: number, options?: RequestInit): Promise<EmployeeRequest> => {
+export const adminApproveRequest = async (id: number,
+    requestApprovalInput?: RequestApprovalInput, options?: RequestInit): Promise<EmployeeRequest> => {
 
   return customFetch<EmployeeRequest>(getAdminApproveRequestUrl(id),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      requestApprovalInput,)
   }
 );}
 
@@ -1980,8 +1983,8 @@ export const adminApproveRequest = async (id: number, options?: RequestInit): Pr
 
 
 export const getAdminApproveRequestMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminApproveRequest>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof adminApproveRequest>>, TError,{id: number}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminApproveRequest>>, TError,{id: number;data?: BodyType<RequestApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminApproveRequest>>, TError,{id: number;data?: BodyType<RequestApprovalInput>}, TContext> => {
 
 const mutationKey = ['adminApproveRequest'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
@@ -1993,10 +1996,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminApproveRequest>>, {id: number}> = (props) => {
-          const {id} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminApproveRequest>>, {id: number;data?: BodyType<RequestApprovalInput>}> = (props) => {
+          const {id,data} = props ?? {};
 
-          return  adminApproveRequest(id,requestOptions)
+          return  adminApproveRequest(id,data,requestOptions)
         }
 
 
@@ -2007,18 +2010,18 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type AdminApproveRequestMutationResult = NonNullable<Awaited<ReturnType<typeof adminApproveRequest>>>
-
+    export type AdminApproveRequestMutationBody = BodyType<RequestApprovalInput> | undefined
     export type AdminApproveRequestMutationError = ErrorType<unknown>
 
     /**
  * @summary Approve an employee request
  */
 export const useAdminApproveRequest = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminApproveRequest>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminApproveRequest>>, TError,{id: number;data?: BodyType<RequestApprovalInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
         Awaited<ReturnType<typeof adminApproveRequest>>,
         TError,
-        {id: number},
+        {id: number;data?: BodyType<RequestApprovalInput>},
         TContext
       > => {
       return useMutation(getAdminApproveRequestMutationOptions(options));

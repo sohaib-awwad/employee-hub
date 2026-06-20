@@ -9,10 +9,11 @@ import {
   employeesTable,
   attendanceTable,
 } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { format } from "date-fns";
 import { requireAuth, requireAdmin } from "../middlewares/auth";
 import { toPublicEmployee } from "../lib/employee";
+import { minutesBetween } from "../lib/attendance";
 
 const router: IRouter = Router();
 
@@ -200,6 +201,14 @@ router.get("/admin/requests", async (req, res) => {
   }
 });
 
+// Optional payload when approving a request: the corrected work window the
+// admin sets in the approval modal. yyyy-mm-dd / HH:mm.
+const RequestApprovalSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  punchIn: z.string().regex(/^\d{2}:\d{2}$/).nullish(),
+  punchOut: z.string().regex(/^\d{2}:\d{2}$/).nullish(),
+});
+
 router.post("/admin/requests/:id/approve", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -207,15 +216,76 @@ router.post("/admin/requests/:id/approve", async (req, res) => {
       res.status(400).json({ error: "Invalid ID" });
       return;
     }
+
+    const existing = await db.select().from(requestsTable).where(eq(requestsTable.id, id)).limit(1);
+    const request = existing[0];
+    if (!request) {
+      res.status(404).json({ error: "Request not found" });
+      return;
+    }
+
+    const parsed = RequestApprovalSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid input", details: parsed.error.issues });
+      return;
+    }
+    const { punchIn, punchOut } = parsed.data;
+    const targetDate = parsed.data.date ?? request.date ?? null;
+
+    // When the admin supplies a corrected work window, write it to the
+    // employee's attendance for that day and approve the request atomically.
+    if (punchIn && punchOut) {
+      if (!targetDate) {
+        res.status(400).json({ error: "A date is required to correct attendance." });
+        return;
+      }
+      if (minutesBetween(punchIn, punchOut) <= 0) {
+        res.status(400).json({ error: "End time must be after the start time." });
+        return;
+      }
+      const hours = Math.round((minutesBetween(punchIn, punchOut) / 60) * 10) / 10;
+      const note = `Corrected via request #${id} by ${req.user!.name}`;
+
+      const updated = await db.transaction(async (tx) => {
+        const rows = await tx
+          .select()
+          .from(attendanceTable)
+          .where(and(eq(attendanceTable.employeeId, request.employeeId), eq(attendanceTable.date, targetDate)))
+          .limit(1);
+        if (rows[0]) {
+          await tx
+            .update(attendanceTable)
+            .set({ punchIn, punchOut, hoursWorked: hours, status: "present", note })
+            .where(eq(attendanceTable.id, rows[0].id));
+        } else {
+          await tx.insert(attendanceTable).values({
+            employeeId: request.employeeId,
+            date: targetDate,
+            punchIn,
+            punchOut,
+            hoursWorked: hours,
+            status: "present",
+            note,
+          });
+        }
+        const upd = await tx
+          .update(requestsTable)
+          .set({ status: "approved" })
+          .where(eq(requestsTable.id, id))
+          .returning();
+        return upd[0];
+      });
+
+      res.json(updated);
+      return;
+    }
+
+    // No correction payload — approve without touching attendance.
     const updated = await db
       .update(requestsTable)
       .set({ status: "approved" })
       .where(eq(requestsTable.id, id))
       .returning();
-    if (!updated[0]) {
-      res.status(404).json({ error: "Request not found" });
-      return;
-    }
     res.json(updated[0]);
   } catch (err) {
     req.log.error({ err }, "Failed to approve request");

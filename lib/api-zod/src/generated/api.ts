@@ -591,6 +591,12 @@ export const AdminApproveRequestParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const AdminApproveRequestBody = zod.object({
+  "date": zod.string().nullish(),
+  "punchIn": zod.string().nullish(),
+  "punchOut": zod.string().nullish()
+})
+
 export const AdminApproveRequestResponse = zod.object({
   "id": zod.number(),
   "employeeId": zod.number(),

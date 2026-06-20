@@ -488,6 +488,12 @@ paths:
           required: true
           schema:
             type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestApprovalInput"
       responses:
         "200":
           description: Updated request
@@ -1039,6 +1045,16 @@ components:
       type: object
       properties:
         comments:
+          type: ["string", "null"]
+
+    RequestApprovalInput:
+      type: object
+      properties:
+        date:
+          type: ["string", "null"]
+        punchIn:
+          type: ["string", "null"]
+        punchOut:
           type: ["string", "null"]
 
     AnnouncementInput:

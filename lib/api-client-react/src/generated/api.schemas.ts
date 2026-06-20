@@ -299,6 +299,15 @@ export interface ActionInput {
   comments?: string | null;
 }
 
+export interface RequestApprovalInput {
+  /** @nullable */
+  date?: string | null;
+  /** @nullable */
+  punchIn?: string | null;
+  /** @nullable */
+  punchOut?: string | null;
+}
+
 export type AnnouncementInputPriority = typeof AnnouncementInputPriority[keyof typeof AnnouncementInputPriority];
 
 
