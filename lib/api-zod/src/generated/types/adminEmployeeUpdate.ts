@@ -5,15 +5,20 @@
  * HR Employee Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminEmployeeUpdateGender } from './adminEmployeeUpdateGender';
 import type { AdminEmployeeUpdateRole } from './adminEmployeeUpdateRole';
 
 export interface AdminEmployeeUpdate {
   /** @nullable */
   name?: string | null;
   /** @nullable */
+  email?: string | null;
+  /** @nullable */
   department?: string | null;
   /** @nullable */
   position?: string | null;
+  /** @nullable */
+  gender?: AdminEmployeeUpdateGender;
   /** @nullable */
   phone?: string | null;
   /** @nullable */

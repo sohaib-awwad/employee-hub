@@ -35,9 +35,9 @@ function CircleProgress({ value, max, color, label, sublabel }: {
     <div className="flex items-center gap-4">
       <div className="relative w-20 h-20 shrink-0">
         <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r={r} fill="none" stroke="#EDE9FE" strokeWidth="8" />
+          <circle cx="40" cy="40" r={r} fill="none" style={{ stroke: "hsl(var(--accent))" }} strokeWidth="8" />
           <circle
-            cx="40" cy="40" r={r} fill="none" stroke={color} strokeWidth="8"
+            cx="40" cy="40" r={r} fill="none" style={{ stroke: color }} strokeWidth="8"
             strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
           />
         </svg>
@@ -168,8 +168,8 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="w-3.5 h-3.5" />
-                <span className={`flex items-center gap-1.5 font-medium text-xs px-2.5 py-1 rounded-full ${hasPunchedIn && !hasPunchedOut ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${hasPunchedIn && !hasPunchedOut ? "bg-green-500" : "bg-gray-400"}`} />
+                <span className={`flex items-center gap-1.5 font-medium text-xs px-2.5 py-1 rounded-full ${hasPunchedIn && !hasPunchedOut ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${hasPunchedIn && !hasPunchedOut ? "bg-success" : "bg-muted-foreground/50"}`} />
                   {hasPunchedOut ? "Punched Out" : hasPunchedIn ? "Punched In" : "Not Started"}
                 </span>
               </div>
@@ -301,7 +301,7 @@ export default function Dashboard() {
                   <CircleProgress
                     value={sickDetail.remaining}
                     max={sickDetail.total}
-                    color="#6C5CE7"
+                    color="hsl(var(--primary))"
                     label="Sick Leave"
                     sublabel={`${sickDetail.used} / ${sickDetail.total} days`}
                   />
@@ -402,7 +402,7 @@ export default function Dashboard() {
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-semibold text-foreground truncate">{a.title}</p>
                       <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded font-medium whitespace-nowrap ${
-                        a.priority === "high" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
+                        a.priority === "high" ? "bg-danger/15 text-danger" : "bg-warning/15 text-warning"
                       }`}>
                         {a.category}
                       </span>

@@ -9,6 +9,10 @@ export const employeesTable = pgTable("employees", {
   department: text("department").notNull(),
   position: text("position").notNull(),
   joinDate: text("join_date").notNull(),
+  // "male" | "female" — drives which gender-specific leave types (maternity /
+  // paternity) are offered to the employee. Nullable for legacy rows created
+  // before this column existed; the admin sets it via the employee form.
+  gender: text("gender"),
   avatarInitials: text("avatar_initials").notNull(),
   phone: text("phone"),
   managerId: integer("manager_id"),

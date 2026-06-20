@@ -39,13 +39,13 @@ const getDayName = (dateStr: string) => {
 
 const getStatusDisplay = (record: { status: string; hoursWorked?: number | null }) => {
   const { status, hoursWorked } = record;
-  if (status === "weekend") return { label: "Weekend", cls: "bg-gray-100 text-gray-500" };
-  if (status === "on_leave") return { label: "On Leave", cls: "bg-blue-100 text-blue-700" };
-  if (status === "absent") return { label: "Absent", cls: "bg-red-100 text-red-700" };
-  if (status === "half_day") return { label: "Partial", cls: "bg-amber-100 text-amber-700" };
-  if (status === "holiday") return { label: "Holiday", cls: "bg-purple-100 text-purple-700" };
+  if (status === "weekend") return { label: "Weekend", cls: "bg-muted text-muted-foreground" };
+  if (status === "on_leave") return { label: "On Leave", cls: "bg-info/15 text-info" };
+  if (status === "absent") return { label: "Absent", cls: "bg-danger/15 text-danger" };
+  if (status === "half_day") return { label: "Partial", cls: "bg-warning/15 text-warning" };
+  if (status === "holiday") return { label: "Holiday", cls: "bg-primary/15 text-primary" };
   if (hoursWorked && hoursWorked > 8) return { label: "Extra Hours", cls: "bg-accent text-primary" };
-  return { label: "Present", cls: "bg-green-100 text-green-700" };
+  return { label: "Present", cls: "bg-success/15 text-success" };
 };
 
 const TODAY = format(new Date(), "yyyy-MM-dd");
@@ -157,9 +157,9 @@ export default function Attendance() {
         </Card>
       )}
       {!todayLoading && todayRecord?.punchIn && !todayRecord?.punchOut && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-success/30 bg-success/10">
           <CardContent className="p-4 flex items-center justify-between gap-4">
-            <p className="text-sm font-medium text-green-800">
+            <p className="text-sm font-medium text-success">
               Punched in at {formatTimeStr(todayRecord.punchIn)} — remember to punch out before you leave.
             </p>
             <Button

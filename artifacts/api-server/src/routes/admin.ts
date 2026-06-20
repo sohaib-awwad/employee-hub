@@ -30,20 +30,74 @@ function initialsFrom(name: string): string {
   return (letters || name.slice(0, 2)).toUpperCase();
 }
 
+// Pagination defaults: 10 rows per page, capped at 100 to bound payloads even
+// if a client asks for more. Rows are sliced after filtering so the page count
+// reflects the active search/filters (the contract is the same whether the
+// slice happens here or, later, in SQL with LIMIT/OFFSET).
+const DEFAULT_PAGE_SIZE = 10;
+const MAX_PAGE_SIZE = 100;
+
+function parsePaging(req: { query: Record<string, unknown> }): {
+  page: number;
+  limit: number;
+  offset: number;
+} {
+  const page = Math.max(1, parseInt(String(req.query.page ?? "1"), 10) || 1);
+  const rawLimit = parseInt(String(req.query.limit ?? DEFAULT_PAGE_SIZE), 10) || DEFAULT_PAGE_SIZE;
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, rawLimit));
+  return { page, limit, offset: (page - 1) * limit };
+}
+
 // ---------------------------------------------------------------- Overview
+// Self-contained dashboard payload: counts + the small "recent" lists the
+// overview screen renders. Keeping it in one endpoint means the dashboard
+// never has to download full leave/request/employee tables just to summarise
+// them (which matters as those tables grow).
 router.get("/admin/overview", async (req, res) => {
   try {
-    const [leaves, requests, employees, announcements] = await Promise.all([
-      db.select().from(leavesTable),
-      db.select().from(requestsTable),
+    const today = format(new Date(), "yyyy-MM-dd");
+    const monthPrefix = format(new Date(), "yyyy-MM");
+
+    const [leaves, requests, employees, announcements, todayAttendance] = await Promise.all([
+      db.select().from(leavesTable).orderBy(desc(leavesTable.createdAt)),
+      db.select().from(requestsTable).orderBy(desc(requestsTable.createdAt)),
       db.select().from(employeesTable),
-      db.select().from(announcementsTable),
+      db.select().from(announcementsTable).orderBy(desc(announcementsTable.publishedAt)),
+      db.select().from(attendanceTable).where(eq(attendanceTable.date, today)),
     ]);
+
+    const names = new Map(employees.map((e) => [e.id, e.name]));
+    const withName = <T extends { employeeId: number }>(r: T) => ({
+      ...r,
+      employeeName: names.get(r.employeeId) ?? null,
+    });
+
+    const pendingLeaveRows = leaves.filter((l) => l.status === "pending");
+    const outToday = leaves.filter(
+      (l) => l.status === "approved" && l.startDate <= today && today <= l.endDate,
+    );
+
+    const presentToday = todayAttendance.filter(
+      (a) => a.status === "present" || a.status === "half_day",
+    ).length;
+    const totalEmployees = employees.length;
+    const onLeaveToday = outToday.length;
+    const notClockedIn = Math.max(0, totalEmployees - presentToday - onLeaveToday);
+    const joinedThisMonth = employees.filter((e) => (e.joinDate ?? "").startsWith(monthPrefix)).length;
+
     res.json({
-      pendingLeaves: leaves.filter((l) => l.status === "pending").length,
+      pendingLeaves: pendingLeaveRows.length,
       pendingRequests: requests.filter((r) => r.status === "pending").length,
-      totalEmployees: employees.length,
+      totalEmployees,
       totalAnnouncements: announcements.length,
+      joinedThisMonth,
+      presentToday,
+      onLeaveToday,
+      notClockedIn,
+      pendingLeaveItems: pendingLeaveRows.slice(0, 5).map(withName),
+      recentRequests: requests.slice(0, 5).map(withName),
+      outToday: outToday.slice(0, 8).map(withName),
+      latestAnnouncement: announcements[0] ?? null,
     });
   } catch (err) {
     req.log.error({ err }, "Failed to load admin overview");
@@ -55,10 +109,19 @@ router.get("/admin/overview", async (req, res) => {
 router.get("/admin/leaves", async (req, res) => {
   try {
     const status = req.query.status as string | undefined;
+    const q = (req.query.q as string | undefined)?.trim().toLowerCase();
+    const { page, limit, offset } = parsePaging(req);
+
     const names = await employeeNameMap();
-    let rows = await db.select().from(leavesTable).orderBy(desc(leavesTable.createdAt));
+    let rows = (await db.select().from(leavesTable).orderBy(desc(leavesTable.createdAt))).map((r) => ({
+      ...r,
+      employeeName: names.get(r.employeeId) ?? null,
+    }));
     if (status) rows = rows.filter((r) => r.status === status);
-    res.json(rows.map((r) => ({ ...r, employeeName: names.get(r.employeeId) ?? null })));
+    if (q) rows = rows.filter((r) => [r.employeeName, r.type, r.reason].some((v) => v?.toLowerCase().includes(q)));
+
+    const total = rows.length;
+    res.json({ items: rows.slice(offset, offset + limit), total, page, limit });
   } catch (err) {
     req.log.error({ err }, "Failed to list leaves (admin)");
     res.status(500).json({ error: "Internal server error" });
@@ -118,10 +181,19 @@ router.post("/admin/leaves/:id/reject", async (req, res) => {
 router.get("/admin/requests", async (req, res) => {
   try {
     const status = req.query.status as string | undefined;
+    const q = (req.query.q as string | undefined)?.trim().toLowerCase();
+    const { page, limit, offset } = parsePaging(req);
+
     const names = await employeeNameMap();
-    let rows = await db.select().from(requestsTable).orderBy(desc(requestsTable.createdAt));
+    let rows = (await db.select().from(requestsTable).orderBy(desc(requestsTable.createdAt))).map((r) => ({
+      ...r,
+      employeeName: names.get(r.employeeId) ?? null,
+    }));
     if (status) rows = rows.filter((r) => r.status === status);
-    res.json(rows.map((r) => ({ ...r, employeeName: names.get(r.employeeId) ?? null })));
+    if (q) rows = rows.filter((r) => [r.employeeName, r.type, r.reason].some((v) => v?.toLowerCase().includes(q)));
+
+    const total = rows.length;
+    res.json({ items: rows.slice(offset, offset + limit), total, page, limit });
   } catch (err) {
     req.log.error({ err }, "Failed to list requests (admin)");
     res.status(500).json({ error: "Internal server error" });
@@ -253,8 +325,16 @@ router.delete("/admin/announcements/:id", async (req, res) => {
 // ------------------------------------------------------------- Employees
 router.get("/admin/employees", async (req, res) => {
   try {
-    const rows = await db.select().from(employeesTable).orderBy(employeesTable.id);
-    res.json(rows.map(toPublicEmployee));
+    const q = (req.query.q as string | undefined)?.trim().toLowerCase();
+    const { page, limit, offset } = parsePaging(req);
+
+    let rows = (await db.select().from(employeesTable).orderBy(employeesTable.id)).map(toPublicEmployee);
+    if (q) {
+      rows = rows.filter((e) => [e.name, e.email, e.department, e.position].some((v) => v?.toLowerCase().includes(q)));
+    }
+
+    const total = rows.length;
+    res.json({ items: rows.slice(offset, offset + limit), total, page, limit });
   } catch (err) {
     req.log.error({ err }, "Failed to list employees (admin)");
     res.status(500).json({ error: "Internal server error" });
@@ -267,6 +347,7 @@ const EmployeeCreateSchema = z.object({
   department: z.string().min(1),
   position: z.string().min(1),
   joinDate: z.string().min(1),
+  gender: z.enum(["male", "female"]),
   avatarInitials: z.string().nullish(),
   phone: z.string().nullish(),
   managerName: z.string().nullish(),
@@ -302,6 +383,7 @@ router.post("/admin/employees", async (req, res) => {
         department: d.department,
         position: d.position,
         joinDate: d.joinDate,
+        gender: d.gender,
         avatarInitials: d.avatarInitials || initialsFrom(d.name),
         phone: d.phone ?? null,
         managerName: d.managerName ?? null,
@@ -319,8 +401,10 @@ router.post("/admin/employees", async (req, res) => {
 
 const EmployeeUpdateSchema = z.object({
   name: z.string().min(1).nullish(),
+  email: z.string().email().nullish(),
   department: z.string().min(1).nullish(),
   position: z.string().min(1).nullish(),
+  gender: z.enum(["male", "female"]).nullish(),
   phone: z.string().nullish(),
   managerName: z.string().nullish(),
   role: z.enum(["employee", "admin"]).nullish(),
@@ -343,8 +427,22 @@ router.patch("/admin/employees/:id", async (req, res) => {
 
     const patch: Record<string, unknown> = {};
     if (d.name != null) patch.name = d.name;
+    if (d.email != null) {
+      const email = d.email.toLowerCase();
+      const existing = await db
+        .select()
+        .from(employeesTable)
+        .where(eq(employeesTable.email, email))
+        .limit(1);
+      if (existing[0] && existing[0].id !== id) {
+        res.status(409).json({ error: "An employee with that email already exists" });
+        return;
+      }
+      patch.email = email;
+    }
     if (d.department != null) patch.department = d.department;
     if (d.position != null) patch.position = d.position;
+    if (d.gender != null) patch.gender = d.gender;
     if (d.phone !== undefined) patch.phone = d.phone;
     if (d.managerName !== undefined) patch.managerName = d.managerName;
     if (d.role != null) patch.role = d.role;
@@ -371,10 +469,54 @@ router.patch("/admin/employees/:id", async (req, res) => {
   }
 });
 
+router.delete("/admin/employees/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      res.status(400).json({ error: "Invalid ID" });
+      return;
+    }
+    // Don't let an admin delete the account they're logged in with.
+    if (req.user?.id === id) {
+      res.status(400).json({ error: "You can't delete your own account" });
+      return;
+    }
+
+    const existing = await db
+      .select()
+      .from(employeesTable)
+      .where(eq(employeesTable.id, id))
+      .limit(1);
+    if (!existing[0]) {
+      res.status(404).json({ error: "Employee not found" });
+      return;
+    }
+
+    // No DB-level cascade, so remove the employee's dependent rows first to
+    // avoid orphaning leaves/requests/attendance.
+    await db.transaction(async (tx) => {
+      await tx.delete(leavesTable).where(eq(leavesTable.employeeId, id));
+      await tx.delete(requestsTable).where(eq(requestsTable.employeeId, id));
+      await tx.delete(attendanceTable).where(eq(attendanceTable.employeeId, id));
+      await tx.delete(employeesTable).where(eq(employeesTable.id, id));
+    });
+
+    res.status(204).end();
+  } catch (err) {
+    req.log.error({ err }, "Failed to delete employee");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ------------------------------------------------------ Attendance overview
 router.get("/admin/attendance", async (req, res) => {
   try {
     const today = format(new Date(), "yyyy-MM-dd");
+    const status = req.query.status as string | undefined;
+    const q = (req.query.q as string | undefined)?.trim().toLowerCase();
+    const sort = (req.query.sort as string | undefined) ?? "name";
+    const { page, limit, offset } = parsePaging(req);
+
     const emps = await db.select().from(employeesTable).orderBy(employeesTable.id);
     const todays = await db
       .select()
@@ -382,21 +524,34 @@ router.get("/admin/attendance", async (req, res) => {
       .where(eq(attendanceTable.date, today));
     const byEmp = new Map(todays.map((a) => [a.employeeId, a]));
 
-    res.json(
-      emps.map((e) => {
-        const a = byEmp.get(e.id);
-        return {
-          employeeId: e.id,
-          employeeName: e.name,
-          department: e.department,
-          date: a?.date ?? today,
-          punchIn: a?.punchIn ?? null,
-          punchOut: a?.punchOut ?? null,
-          status: a?.status ?? "absent",
-          hoursWorked: a?.hoursWorked ?? null,
-        };
-      }),
-    );
+    let rows = emps.map((e) => {
+      const a = byEmp.get(e.id);
+      return {
+        employeeId: e.id,
+        employeeName: e.name,
+        department: e.department,
+        date: a?.date ?? today,
+        punchIn: a?.punchIn ?? null,
+        punchOut: a?.punchOut ?? null,
+        status: a?.status ?? "absent",
+        hoursWorked: a?.hoursWorked ?? null,
+      };
+    });
+
+    // Summary counts reflect the whole company, not the current filter/page.
+    const presentToday = rows.filter((r) => r.status === "present" || r.status === "half_day").length;
+    const totalEmployees = rows.length;
+
+    if (status) rows = rows.filter((r) => r.status === status);
+    if (q) rows = rows.filter((r) => [r.employeeName, r.department].some((v) => v?.toLowerCase().includes(q)));
+    rows = rows.slice().sort((a, b) => {
+      if (sort === "status") return a.status.localeCompare(b.status);
+      if (sort === "punchIn") return (a.punchIn ?? "99:99").localeCompare(b.punchIn ?? "99:99");
+      return (a.employeeName ?? "").localeCompare(b.employeeName ?? "");
+    });
+
+    const total = rows.length;
+    res.json({ items: rows.slice(offset, offset + limit), total, page, limit, presentToday, totalEmployees });
   } catch (err) {
     req.log.error({ err }, "Failed to load attendance overview");
     res.status(500).json({ error: "Internal server error" });

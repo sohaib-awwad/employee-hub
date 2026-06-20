@@ -25,6 +25,7 @@ export const LoginResponse = zod.object({
   "joinDate": zod.string(),
   "avatarInitials": zod.string(),
   "role": zod.enum(['employee', 'admin']),
+  "gender": zod.union([zod.literal('male'),zod.literal('female'),zod.literal(null)]).nullish(),
   "phone": zod.string().nullish(),
   "managerId": zod.number().nullish(),
   "managerName": zod.string().nullish()
@@ -43,6 +44,7 @@ export const GetCurrentUserResponse = zod.object({
   "joinDate": zod.string(),
   "avatarInitials": zod.string(),
   "role": zod.enum(['employee', 'admin']),
+  "gender": zod.union([zod.literal('male'),zod.literal('female'),zod.literal(null)]).nullish(),
   "phone": zod.string().nullish(),
   "managerId": zod.number().nullish(),
   "managerName": zod.string().nullish()
@@ -69,6 +71,7 @@ export const GetMyProfileResponse = zod.object({
   "joinDate": zod.string(),
   "avatarInitials": zod.string(),
   "role": zod.enum(['employee', 'admin']),
+  "gender": zod.union([zod.literal('male'),zod.literal('female'),zod.literal(null)]).nullish(),
   "phone": zod.string().nullish(),
   "managerId": zod.number().nullish(),
   "managerName": zod.string().nullish()
@@ -238,6 +241,7 @@ export const GetDashboardResponse = zod.object({
   "joinDate": zod.string(),
   "avatarInitials": zod.string(),
   "role": zod.enum(['employee', 'admin']),
+  "gender": zod.union([zod.literal('male'),zod.literal('female'),zod.literal(null)]).nullish(),
   "phone": zod.string().nullish(),
   "managerId": zod.number().nullish(),
   "managerName": zod.string().nullish()
@@ -367,18 +371,12 @@ export const AdminGetOverviewResponse = zod.object({
   "pendingLeaves": zod.number(),
   "pendingRequests": zod.number(),
   "totalEmployees": zod.number(),
-  "totalAnnouncements": zod.number()
-})
-
-
-/**
- * @summary List all leave requests
- */
-export const AdminListLeavesQueryParams = zod.object({
-  "status": zod.union([zod.literal('pending'),zod.literal('approved'),zod.literal('rejected'),zod.literal('cancelled'),zod.literal(null)]).nullish()
-})
-
-export const AdminListLeavesResponseItem = zod.object({
+  "totalAnnouncements": zod.number(),
+  "joinedThisMonth": zod.number(),
+  "presentToday": zod.number(),
+  "onLeaveToday": zod.number(),
+  "notClockedIn": zod.number(),
+  "pendingLeaveItems": zod.array(zod.object({
   "id": zod.number(),
   "type": zod.enum(['annual', 'sick', 'casual', 'maternity', 'paternity', 'unpaid', 'other']),
   "startDate": zod.string(),
@@ -390,8 +388,71 @@ export const AdminListLeavesResponseItem = zod.object({
   "approvedBy": zod.string().nullish(),
   "comments": zod.string().nullish(),
   "employeeName": zod.string().nullish()
+})),
+  "recentRequests": zod.array(zod.object({
+  "id": zod.number(),
+  "employeeId": zod.number(),
+  "type": zod.enum(['correction', 'attendance']),
+  "date": zod.string().nullish(),
+  "reason": zod.string(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "comments": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "employeeName": zod.string().nullish()
+})),
+  "outToday": zod.array(zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['annual', 'sick', 'casual', 'maternity', 'paternity', 'unpaid', 'other']),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "days": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'cancelled']),
+  "reason": zod.string(),
+  "createdAt": zod.string(),
+  "approvedBy": zod.string().nullish(),
+  "comments": zod.string().nullish(),
+  "employeeName": zod.string().nullish()
+})),
+  "latestAnnouncement": zod.union([zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "body": zod.string(),
+  "category": zod.string(),
+  "priority": zod.enum(['low', 'medium', 'high']),
+  "type": zod.enum(['announcement', 'event']),
+  "publishedAt": zod.string()
+}),zod.null()]).optional()
 })
-export const AdminListLeavesResponse = zod.array(AdminListLeavesResponseItem)
+
+
+/**
+ * @summary List all leave requests (paginated)
+ */
+export const AdminListLeavesQueryParams = zod.object({
+  "status": zod.union([zod.literal('pending'),zod.literal('approved'),zod.literal('rejected'),zod.literal('cancelled'),zod.literal(null)]).nullish(),
+  "q": zod.coerce.string().nullish(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const AdminListLeavesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.number(),
+  "type": zod.enum(['annual', 'sick', 'casual', 'maternity', 'paternity', 'unpaid', 'other']),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "days": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'rejected', 'cancelled']),
+  "reason": zod.string(),
+  "createdAt": zod.string(),
+  "approvedBy": zod.string().nullish(),
+  "comments": zod.string().nullish(),
+  "employeeName": zod.string().nullish()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
+})
 
 
 /**
@@ -443,13 +504,17 @@ export const AdminRejectLeaveResponse = zod.object({
 
 
 /**
- * @summary List all employee requests
+ * @summary List all employee requests (paginated)
  */
 export const AdminListRequestsQueryParams = zod.object({
-  "status": zod.union([zod.literal('pending'),zod.literal('approved'),zod.literal('rejected'),zod.literal(null)]).nullish()
+  "status": zod.union([zod.literal('pending'),zod.literal('approved'),zod.literal('rejected'),zod.literal(null)]).nullish(),
+  "q": zod.coerce.string().nullish(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
 })
 
-export const AdminListRequestsResponseItem = zod.object({
+export const AdminListRequestsResponse = zod.object({
+  "items": zod.array(zod.object({
   "id": zod.number(),
   "employeeId": zod.number(),
   "type": zod.enum(['correction', 'attendance']),
@@ -459,8 +524,11 @@ export const AdminListRequestsResponseItem = zod.object({
   "comments": zod.string().nullish(),
   "createdAt": zod.string(),
   "employeeName": zod.string().nullish()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
 })
-export const AdminListRequestsResponse = zod.array(AdminListRequestsResponseItem)
 
 
 /**
@@ -556,9 +624,16 @@ export const AdminDeleteAnnouncementParams = zod.object({
 
 
 /**
- * @summary List all employees
+ * @summary List all employees (paginated)
  */
-export const AdminListEmployeesResponseItem = zod.object({
+export const AdminListEmployeesQueryParams = zod.object({
+  "q": zod.coerce.string().nullish(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const AdminListEmployeesResponse = zod.object({
+  "items": zod.array(zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "email": zod.string(),
@@ -567,11 +642,15 @@ export const AdminListEmployeesResponseItem = zod.object({
   "joinDate": zod.string(),
   "avatarInitials": zod.string(),
   "role": zod.enum(['employee', 'admin']),
+  "gender": zod.union([zod.literal('male'),zod.literal('female'),zod.literal(null)]).nullish(),
   "phone": zod.string().nullish(),
   "managerId": zod.number().nullish(),
   "managerName": zod.string().nullish()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
 })
-export const AdminListEmployeesResponse = zod.array(AdminListEmployeesResponseItem)
 
 
 /**
@@ -583,6 +662,7 @@ export const AdminCreateEmployeeBody = zod.object({
   "department": zod.string(),
   "position": zod.string(),
   "joinDate": zod.string(),
+  "gender": zod.enum(['male', 'female']),
   "avatarInitials": zod.string().nullish(),
   "phone": zod.string().nullish(),
   "managerName": zod.string().nullish(),
@@ -600,8 +680,10 @@ export const AdminUpdateEmployeeParams = zod.object({
 
 export const AdminUpdateEmployeeBody = zod.object({
   "name": zod.string().nullish(),
+  "email": zod.string().nullish(),
   "department": zod.string().nullish(),
   "position": zod.string().nullish(),
+  "gender": zod.union([zod.literal('male'),zod.literal('female'),zod.literal(null)]).nullish(),
   "phone": zod.string().nullish(),
   "managerName": zod.string().nullish(),
   "role": zod.union([zod.literal('employee'),zod.literal('admin'),zod.literal(null)]).nullish(),
@@ -617,6 +699,7 @@ export const AdminUpdateEmployeeResponse = zod.object({
   "joinDate": zod.string(),
   "avatarInitials": zod.string(),
   "role": zod.enum(['employee', 'admin']),
+  "gender": zod.union([zod.literal('male'),zod.literal('female'),zod.literal(null)]).nullish(),
   "phone": zod.string().nullish(),
   "managerId": zod.number().nullish(),
   "managerName": zod.string().nullish()
@@ -624,9 +707,26 @@ export const AdminUpdateEmployeeResponse = zod.object({
 
 
 /**
- * @summary Today's attendance across all employees
+ * @summary Delete an employee
  */
-export const AdminListAttendanceTodayResponseItem = zod.object({
+export const AdminDeleteEmployeeParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+/**
+ * @summary Today's attendance across all employees (paginated)
+ */
+export const AdminListAttendanceTodayQueryParams = zod.object({
+  "status": zod.coerce.string().nullish(),
+  "q": zod.coerce.string().nullish(),
+  "sort": zod.union([zod.literal('name'),zod.literal('punchIn'),zod.literal('status'),zod.literal(null)]).nullish(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
+
+export const AdminListAttendanceTodayResponse = zod.object({
+  "items": zod.array(zod.object({
   "employeeId": zod.number(),
   "employeeName": zod.string(),
   "department": zod.string().nullish(),
@@ -635,7 +735,12 @@ export const AdminListAttendanceTodayResponseItem = zod.object({
   "punchOut": zod.string().nullish(),
   "status": zod.string(),
   "hoursWorked": zod.number().nullish()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number(),
+  "presentToday": zod.number(),
+  "totalEmployees": zod.number()
 })
-export const AdminListAttendanceTodayResponse = zod.array(AdminListAttendanceTodayResponseItem)
 
 

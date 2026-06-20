@@ -5,11 +5,7 @@ import { eq, and, asc, desc } from "drizzle-orm";
 import { format, subDays, startOfWeek } from "date-fns";
 import { requireAuth } from "../middlewares/auth";
 import { toPublicEmployee } from "../lib/employee";
-
-const LEAVE_ALLOWANCES: Record<string, number> = {
-  annual: 21, sick: 10, casual: 7,
-  maternity: 90, paternity: 14, unpaid: 30, other: 5,
-};
+import { allowancesFor } from "../lib/leave";
 
 function getToday(): string {
   return format(new Date(), "yyyy-MM-dd");
@@ -52,23 +48,25 @@ router.get("/dashboard", requireAuth, async (req, res) => {
       .from(leavesTable)
       .where(and(eq(leavesTable.employeeId, employeeId), eq(leavesTable.status, "approved")));
 
+    const allowances = allowancesFor(req.user!.gender);
+
     const usedByType: Record<string, number> = {};
     for (const leave of approvedLeaves) {
       usedByType[leave.type] = (usedByType[leave.type] || 0) + leave.days;
     }
 
-    const details = Object.entries(LEAVE_ALLOWANCES).map(([type, total]) => ({
+    const details = Object.entries(allowances).map(([type, total]) => ({
       type, total,
       used: usedByType[type] || 0,
       remaining: total - (usedByType[type] || 0),
     }));
 
     const used = Object.values(usedByType).reduce((a, b) => a + b, 0);
-    const remaining = Object.values(LEAVE_ALLOWANCES).reduce((a, b) => a + b, 0) - used;
+    const remaining = Object.values(allowances).reduce((a, b) => a + b, 0) - used;
     const leaveBalance = {
-      annual: LEAVE_ALLOWANCES.annual - (usedByType.annual || 0),
-      sick: LEAVE_ALLOWANCES.sick - (usedByType.sick || 0),
-      casual: LEAVE_ALLOWANCES.casual - (usedByType.casual || 0),
+      annual: allowances.annual - (usedByType.annual || 0),
+      sick: allowances.sick - (usedByType.sick || 0),
+      casual: allowances.casual - (usedByType.casual || 0),
       used, remaining, details,
     };
 

@@ -24,7 +24,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useAuth } from "@/lib/auth";
+import { LogoutConfirm } from "@/components/logout-confirm";
 
 interface LayoutProps {
   children: ReactNode;
@@ -40,7 +40,6 @@ const NAV_ITEMS = [
 export default function Layout({ children }: LayoutProps) {
   const [location, setLocation] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { logout } = useAuth();
   const { data: profile, isLoading } = useGetMyProfile({
     query: { queryKey: getGetMyProfileQueryKey() }
   });
@@ -58,41 +57,13 @@ export default function Layout({ children }: LayoutProps) {
     <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col bg-sidebar-background border-r border-sidebar-border">
-        {/* Logo */}
-        <div className="p-6 flex items-center gap-3">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="shrink-0">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-4H7l5-8v4h4l-5 8z" fill="#22C55E"/>
+        {/* Logo — top padding matches the body content (md:p-8) so the wordmark
+            and the page heading begin on the same line. */}
+        <div className="px-6 pt-8 pb-4 flex items-center gap-3">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="shrink-0 text-primary">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-4H7l5-8v4h4l-5 8z" fill="currentColor"/>
           </svg>
           <span className="font-bold text-xl tracking-tight text-foreground">Olive</span>
-        </div>
-
-        {/* User Profile Card */}
-        <div className="px-4 pb-6">
-          {isLoading ? (
-             <div className="flex items-center gap-3 px-2">
-              <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-24" />
-                <div className="h-3 bg-gray-200 rounded animate-pulse w-32" />
-              </div>
-            </div>
-          ) : profile ? (
-            <div className="flex items-center gap-3 px-2">
-              <Avatar className="h-10 w-10">
-                <AvatarFallback className="bg-primary/20 text-primary font-bold">
-                  {profile.avatarInitials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="overflow-hidden">
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {profile.name}
-                </p>
-                <p className="text-xs text-muted-foreground truncate font-medium">
-                  {profile.position}
-                </p>
-              </div>
-            </div>
-          ) : null}
         </div>
 
         {/* Navigation */}
@@ -100,12 +71,12 @@ export default function Layout({ children }: LayoutProps) {
           {NAV_ITEMS.map((item) => {
             const isActive = location === item.href;
             return (
-              <Link 
-                key={item.href} 
+              <Link
+                key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all relative ${
-                  isActive 
-                    ? "bg-accent text-primary" 
+                  isActive
+                    ? "bg-accent text-primary"
                     : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                 }`}
               >
@@ -114,51 +85,56 @@ export default function Layout({ children }: LayoutProps) {
                 )}
                 <item.icon className={`w-5 h-5 ${isActive ? "text-primary" : ""}`} />
                 {item.label}
+                {item.href === "/announcements" && hasRecentAnnouncement && (
+                  <span
+                    className="ml-auto w-2 h-2 bg-destructive rounded-full"
+                    data-testid="nav-announcements-dot"
+                  />
+                )}
               </Link>
             );
           })}
         </nav>
+
+        {/* User + controls (mirrors the admin sidebar) */}
+        <div className="p-3 border-t border-sidebar-border">
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8 shrink-0">
+              <AvatarFallback className="bg-primary/20 text-primary font-bold text-xs">
+                {profile?.avatarInitials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground truncate">
+                {isLoading ? "…" : profile?.name}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {profile?.position}
+              </p>
+            </div>
+            <ThemeToggle />
+            <LogoutConfirm>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="Log out"
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </LogoutConfirm>
+          </div>
+        </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Desktop Header */}
-        <header className="hidden md:flex items-center justify-end px-8 py-4 bg-background">
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <button
-              onClick={() => setLocation("/announcements")}
-              className="relative p-2 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-accent"
-              data-testid="button-notifications"
-            >
-              <Bell className="w-5 h-5" />
-              {hasRecentAnnouncement && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-background"></span>
-              )}
-            </button>
-            <Avatar className="h-9 w-9">
-              <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
-                {profile?.avatarInitials}
-              </AvatarFallback>
-            </Avatar>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-              onClick={() => logout()}
-              data-testid="button-logout"
-            >
-              <LogOut className="w-4 h-4" />
-              Log out
-            </Button>
-          </div>
-        </header>
-
         {/* Mobile Header */}
         <header className="md:hidden flex items-center justify-between p-4 bg-card border-b border-sidebar-border z-20">
           <div className="flex items-center gap-2">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="shrink-0">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-4H7l5-8v4h4l-5 8z" fill="#22C55E"/>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="shrink-0 text-primary">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-4H7l5-8v4h4l-5 8z" fill="currentColor"/>
             </svg>
             <span className="font-bold text-lg text-foreground">Olive</span>
           </div>
@@ -171,7 +147,7 @@ export default function Layout({ children }: LayoutProps) {
             >
               <Bell className="w-5 h-5" />
               {hasRecentAnnouncement && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full border-2 border-card"></span>
               )}
             </button>
             <Button variant="ghost" size="icon" className="text-foreground" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
@@ -202,14 +178,16 @@ export default function Layout({ children }: LayoutProps) {
                   </Link>
                 );
               })}
-              <button
-                onClick={() => { setIsMobileMenuOpen(false); logout(); }}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-muted-foreground hover:bg-accent/60 w-full"
-                data-testid="button-logout-mobile"
-              >
-                <LogOut className="w-5 h-5" />
-                Log out
-              </button>
+              <LogoutConfirm>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-medium text-muted-foreground hover:bg-accent/60 w-full"
+                  data-testid="button-logout-mobile"
+                >
+                  <LogOut className="w-5 h-5" />
+                  Log out
+                </button>
+              </LogoutConfirm>
             </div>
           </div>
         )}

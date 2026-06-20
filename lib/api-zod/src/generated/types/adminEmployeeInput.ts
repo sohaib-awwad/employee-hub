@@ -5,6 +5,7 @@
  * HR Employee Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminEmployeeInputGender } from './adminEmployeeInputGender';
 import type { AdminEmployeeInputRole } from './adminEmployeeInputRole';
 
 export interface AdminEmployeeInput {
@@ -13,6 +14,7 @@ export interface AdminEmployeeInput {
   department: string;
   position: string;
   joinDate: string;
+  gender: AdminEmployeeInputGender;
   /** @nullable */
   avatarInitials?: string | null;
   /** @nullable */

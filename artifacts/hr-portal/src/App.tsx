@@ -1,5 +1,11 @@
 import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  QueryCache,
+  MutationCache,
+} from "@tanstack/react-query";
+import { getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { Loader2 } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +25,14 @@ import Attendance from "@/pages/attendance";
 import LeaveRequests from "@/pages/leave-requests";
 import Announcements from "@/pages/announcements";
 
+const CURRENT_USER_KEY = getGetCurrentUserQueryKey();
+
+// The fetch mutator throws an ApiError carrying the HTTP status.
+function isAuthError(err: unknown): boolean {
+  const status = (err as { status?: number } | null)?.status;
+  return status === 401 || status === 403;
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -26,6 +40,24 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
+  // If any request is rejected as unauthenticated (401) or not-allowed (403) —
+  // e.g. the session cookie was swapped to a non-admin in another tab — re-check
+  // /auth/me so the app stops showing a stale view and the route guard sends the
+  // user where their real session belongs (login, or the employee app).
+  queryCache: new QueryCache({
+    onError: (err, query) => {
+      if (isAuthError(err) && query.queryKey[0] !== CURRENT_USER_KEY[0]) {
+        queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (err) => {
+      if (isAuthError(err)) {
+        queryClient.invalidateQueries({ queryKey: CURRENT_USER_KEY });
+      }
+    },
+  }),
 });
 
 // Role-aware routing:
@@ -81,6 +113,13 @@ function AuthedRoutes() {
         <Route path="/leave-requests" component={LeaveRequests} />
         <Route path="/announcements" component={Announcements} />
         <Route path="/login">
+          <Redirect to="/" />
+        </Route>
+        {/* A non-admin landing on an admin URL (e.g. a stale tab) goes home. */}
+        <Route path="/admin">
+          <Redirect to="/" />
+        </Route>
+        <Route path="/admin/*">
           <Redirect to="/" />
         </Route>
         <Route component={NotFound} />

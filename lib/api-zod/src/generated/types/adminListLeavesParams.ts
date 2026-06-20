@@ -12,4 +12,10 @@ export type AdminListLeavesParams = {
  * @nullable
  */
 status?: AdminListLeavesStatus;
+/**
+ * @nullable
+ */
+q?: string | null;
+page?: number;
+limit?: number;
 };

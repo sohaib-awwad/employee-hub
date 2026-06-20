@@ -12,9 +12,9 @@ import { Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
 const PAGE_SIZE = 6;
 
 const PRIORITY_STYLE: Record<string, string> = {
-  high:   "bg-red-100 text-red-700",
-  medium: "bg-blue-100 text-blue-700",
-  low:    "bg-gray-100 text-gray-500",
+  high:   "bg-danger/15 text-danger",
+  medium: "bg-info/15 text-info",
+  low:    "bg-muted text-muted-foreground",
 };
 
 export default function Announcements() {

@@ -5,17 +5,21 @@
  * HR Employee Portal API
  * OpenAPI spec version: 0.1.0
  */
-import type { AdminListRequestsStatus } from './adminListRequestsStatus';
+import type { AdminListAttendanceTodaySort } from './adminListAttendanceTodaySort';
 
-export type AdminListRequestsParams = {
+export type AdminListAttendanceTodayParams = {
 /**
  * @nullable
  */
-status?: AdminListRequestsStatus;
+status?: string | null;
 /**
  * @nullable
  */
 q?: string | null;
+/**
+ * @nullable
+ */
+sort?: AdminListAttendanceTodaySort;
 page?: number;
 limit?: number;
 };

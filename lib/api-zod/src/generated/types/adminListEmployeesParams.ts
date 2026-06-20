@@ -5,13 +5,8 @@
  * HR Employee Portal API
  * OpenAPI spec version: 0.1.0
  */
-import type { AdminListRequestsStatus } from './adminListRequestsStatus';
 
-export type AdminListRequestsParams = {
-/**
- * @nullable
- */
-status?: AdminListRequestsStatus;
+export type AdminListEmployeesParams = {
 /**
  * @nullable
  */

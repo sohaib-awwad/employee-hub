@@ -16,6 +16,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 
 const leaveSchema = z.object({
   type: z.enum(["annual", "sick", "casual", "maternity", "paternity", "unpaid", "other"]),
@@ -24,21 +25,33 @@ const leaveSchema = z.object({
   reason: z.string().min(5, "Reason must be at least 5 characters"),
 });
 
+// Leave types offered when applying. Maternity is female-only and paternity
+// male-only, so an employee never sees a leave type that doesn't apply to them.
+const LEAVE_TYPE_OPTIONS: { value: string; label: string; gender?: "male" | "female" }[] = [
+  { value: "annual", label: "Annual Leave" },
+  { value: "sick", label: "Sick Leave" },
+  { value: "casual", label: "Casual Leave" },
+  { value: "maternity", label: "Maternity Leave", gender: "female" },
+  { value: "paternity", label: "Paternity Leave", gender: "male" },
+  { value: "unpaid", label: "Unpaid Leave" },
+  { value: "other", label: "Other" },
+];
+
 const LEAVE_TYPE_META: Record<string, { label: string; icon: React.ReactNode; color: string; barColor: string }> = {
-  annual:    { label: "Annual Leave",    icon: <Plane className="w-5 h-5" />,          color: "text-blue-600 bg-blue-100",   barColor: "bg-blue-500" },
-  sick:      { label: "Sick Leave",      icon: <Thermometer className="w-5 h-5" />,    color: "text-orange-600 bg-orange-100", barColor: "bg-orange-500" },
-  casual:    { label: "Casual Leave",    icon: <Coffee className="w-5 h-5" />,         color: "text-green-600 bg-green-100", barColor: "bg-green-500" },
-  maternity: { label: "Maternity Leave", icon: <Baby className="w-5 h-5" />,           color: "text-pink-600 bg-pink-100",   barColor: "bg-pink-500" },
-  paternity: { label: "Paternity Leave", icon: <Baby className="w-5 h-5" />,           color: "text-purple-600 bg-purple-100", barColor: "bg-primary" },
-  unpaid:    { label: "Unpaid Leave",    icon: <Wallet className="w-5 h-5" />,         color: "text-gray-600 bg-gray-100",   barColor: "bg-gray-400" },
-  other:     { label: "Other Leave",     icon: <MoreHorizontal className="w-5 h-5" />, color: "text-gray-600 bg-gray-100",   barColor: "bg-gray-400" },
+  annual:    { label: "Annual Leave",    icon: <Plane className="w-5 h-5" />,          color: "text-info bg-info/15",        barColor: "bg-info" },
+  sick:      { label: "Sick Leave",      icon: <Thermometer className="w-5 h-5" />,    color: "text-warning bg-warning/15",  barColor: "bg-warning" },
+  casual:    { label: "Casual Leave",    icon: <Coffee className="w-5 h-5" />,         color: "text-success bg-success/15",  barColor: "bg-success" },
+  maternity: { label: "Maternity Leave", icon: <Baby className="w-5 h-5" />,           color: "text-danger bg-danger/15",    barColor: "bg-danger" },
+  paternity: { label: "Paternity Leave", icon: <Baby className="w-5 h-5" />,           color: "text-primary bg-primary/15",  barColor: "bg-primary" },
+  unpaid:    { label: "Unpaid Leave",    icon: <Wallet className="w-5 h-5" />,         color: "text-muted-foreground bg-muted", barColor: "bg-muted-foreground/40" },
+  other:     { label: "Other Leave",     icon: <MoreHorizontal className="w-5 h-5" />, color: "text-muted-foreground bg-muted", barColor: "bg-muted-foreground/40" },
 };
 
 const STATUS_STYLE: Record<string, string> = {
-  approved:  "bg-green-100 text-green-700",
-  pending:   "bg-amber-100 text-amber-700",
-  rejected:  "bg-red-100 text-red-700",
-  cancelled: "bg-gray-100 text-gray-500",
+  approved:  "bg-success/15 text-success",
+  pending:   "bg-warning/15 text-warning",
+  rejected:  "bg-danger/15 text-danger",
+  cancelled: "bg-muted text-muted-foreground",
 };
 
 const MAIN_TYPES = ["annual", "sick", "casual", "unpaid"];
@@ -50,7 +63,11 @@ export default function LeaveRequests() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Only show leave types the employee is actually entitled to apply for.
+  const leaveTypeOptions = LEAVE_TYPE_OPTIONS.filter((o) => !o.gender || o.gender === user?.gender);
 
   const { data: balance, isLoading: balanceLoading } = useGetLeaveBalance({
     query: { queryKey: getGetLeaveBalanceQueryKey() }
@@ -238,13 +255,9 @@ export default function LeaveRequests() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="annual">Annual</SelectItem>
-                    <SelectItem value="sick">Sick</SelectItem>
-                    <SelectItem value="casual">Casual</SelectItem>
-                    <SelectItem value="maternity">Maternity</SelectItem>
-                    <SelectItem value="paternity">Paternity</SelectItem>
-                    <SelectItem value="unpaid">Unpaid</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    {leaveTypeOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <div className="relative">
@@ -334,7 +347,7 @@ export default function LeaveRequests() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-7 px-3 text-xs"
+                            className="text-danger hover:text-danger hover:bg-danger/10 h-7 px-3 text-xs"
                             onClick={() => handleCancel(leave.id)}
                             disabled={cancelLeave.isPending}
                             data-testid={`button-cancel-leave-${leave.id}`}
@@ -373,13 +386,9 @@ export default function LeaveRequests() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="annual">Annual Leave</SelectItem>
-                        <SelectItem value="sick">Sick Leave</SelectItem>
-                        <SelectItem value="casual">Casual Leave</SelectItem>
-                        <SelectItem value="maternity">Maternity Leave</SelectItem>
-                        <SelectItem value="paternity">Paternity Leave</SelectItem>
-                        <SelectItem value="unpaid">Unpaid Leave</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        {leaveTypeOptions.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

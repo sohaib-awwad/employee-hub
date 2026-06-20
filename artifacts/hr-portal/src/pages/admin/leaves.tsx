@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import {
   useAdminListLeaves,
   getAdminListLeavesQueryKey,
@@ -9,16 +9,21 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TablePagination } from "@/components/table-pagination";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { format, parseISO } from "date-fns";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const PAGE_SIZE = 10;
+
 const STATUS_STYLE: Record<string, string> = {
-  approved: "bg-green-100 text-green-700",
-  pending: "bg-amber-100 text-amber-700",
-  rejected: "bg-red-100 text-red-700",
-  cancelled: "bg-gray-100 text-gray-500",
+  approved: "bg-success/15 text-success",
+  pending: "bg-warning/15 text-warning",
+  rejected: "bg-danger/15 text-danger",
+  cancelled: "bg-muted text-muted-foreground",
 };
 
 const TABS = ["pending", "all", "approved", "rejected"] as const;
@@ -27,10 +32,25 @@ export default function AdminLeaves() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<(typeof TABS)[number]>("pending");
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedQ = useDebouncedValue(q.trim(), 300);
 
-  const { data: leaves, isLoading } = useAdminListLeaves(undefined, {
-    query: { queryKey: getAdminListLeavesQueryKey() },
+  // Any change to the filter or search resets us to the first page.
+  useEffect(() => setPage(1), [tab, debouncedQ]);
+
+  const params = {
+    status: tab === "all" ? undefined : tab,
+    q: debouncedQ || undefined,
+    page,
+    limit: PAGE_SIZE,
+  };
+  const { data, isLoading } = useAdminListLeaves(params, {
+    query: { queryKey: getAdminListLeavesQueryKey(params), placeholderData: keepPreviousData },
   });
+  const rows = data?.items ?? [];
+  const total = data?.total ?? 0;
+
   const approve = useAdminApproveLeave();
   const reject = useAdminRejectLeave();
 
@@ -51,11 +71,10 @@ export default function AdminLeaves() {
       onError: () => toast({ title: "Failed to reject", variant: "destructive" }),
     });
 
-  const rows = (leaves ?? []).filter((l) => tab === "all" || l.status === tab);
   const busyId = approve.isPending ? approve.variables?.id : reject.isPending ? reject.variables?.id : undefined;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Leave Approvals</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
@@ -63,19 +82,31 @@ export default function AdminLeaves() {
         </p>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {TABS.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize ${
-              tab === t ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
-            }`}
-            data-testid={`tab-${t}`}
-          >
-            {t}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {TABS.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize ${
+                tab === t ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
+              }`}
+              data-testid={`tab-${t}`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            className="pl-9 border-border bg-card text-sm"
+            placeholder="Search name, type, reason…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            data-testid="input-search"
+          />
+        </div>
       </div>
 
       <Card className="border-border shadow-sm overflow-hidden">
@@ -111,10 +142,10 @@ export default function AdminLeaves() {
                     <td className="px-5 py-3.5">
                       {l.status === "pending" ? (
                         <div className="flex gap-2">
-                          <Button size="sm" className="h-7 gap-1 bg-green-600 hover:bg-green-700 text-white" onClick={() => onApprove(l.id)} disabled={busyId === l.id} data-testid={`button-approve-${l.id}`}>
+                          <Button size="sm" className="h-7 gap-1 bg-success text-success-foreground hover:bg-success/90" onClick={() => onApprove(l.id)} disabled={busyId === l.id} data-testid={`button-approve-${l.id}`}>
                             {busyId === l.id && approve.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Approve
                           </Button>
-                          <Button size="sm" variant="outline" className="h-7 gap-1 text-red-600 border-red-200 hover:bg-red-50" onClick={() => onReject(l.id)} disabled={busyId === l.id} data-testid={`button-reject-${l.id}`}>
+                          <Button size="sm" variant="outline" className="h-7 gap-1 text-danger border-danger/30 hover:bg-danger/10" onClick={() => onReject(l.id)} disabled={busyId === l.id} data-testid={`button-reject-${l.id}`}>
                             <X className="w-3 h-3" /> Reject
                           </Button>
                         </div>
@@ -129,6 +160,8 @@ export default function AdminLeaves() {
           </table>
         </CardContent>
       </Card>
+
+      <TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
     </div>
   );
 }

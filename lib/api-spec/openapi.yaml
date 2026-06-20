@@ -344,22 +344,32 @@ paths:
     get:
       operationId: adminListLeaves
       tags: [admin]
-      summary: List all leave requests
+      summary: List all leave requests (paginated)
       parameters:
         - name: status
           in: query
           schema:
             type: ["string", "null"]
             enum: [pending, approved, rejected, cancelled, null]
+        - name: q
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
       responses:
         "200":
           description: Leaves
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/LeaveRequest"
+                $ref: "#/components/schemas/AdminLeavesPage"
 
   /admin/leaves/{id}/approve:
     post:
@@ -409,22 +419,32 @@ paths:
     get:
       operationId: adminListRequests
       tags: [admin]
-      summary: List all employee requests
+      summary: List all employee requests (paginated)
       parameters:
         - name: status
           in: query
           schema:
             type: ["string", "null"]
             enum: [pending, approved, rejected, null]
+        - name: q
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
       responses:
         "200":
           description: Requests
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/EmployeeRequest"
+                $ref: "#/components/schemas/AdminRequestsPage"
 
   /admin/requests/{id}/approve:
     post:
@@ -531,16 +551,27 @@ paths:
     get:
       operationId: adminListEmployees
       tags: [admin]
-      summary: List all employees
+      summary: List all employees (paginated)
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
       responses:
         "200":
           description: Employees
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Employee"
+                $ref: "#/components/schemas/AdminEmployeesPage"
     post:
       operationId: adminCreateEmployee
       tags: [admin]
@@ -583,21 +614,54 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Employee"
+    delete:
+      operationId: adminDeleteEmployee
+      tags: [admin]
+      summary: Delete an employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /admin/attendance:
     get:
       operationId: adminListAttendanceToday
       tags: [admin]
-      summary: Today's attendance across all employees
+      summary: Today's attendance across all employees (paginated)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: q
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: sort
+          in: query
+          schema:
+            type: ["string", "null"]
+            enum: [name, punchIn, status, null]
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
       responses:
         "200":
           description: Attendance overview
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdminAttendanceRow"
+                $ref: "#/components/schemas/AdminAttendancePage"
 
 components:
   schemas:
@@ -630,6 +694,9 @@ components:
         role:
           type: string
           enum: [employee, admin]
+        gender:
+          type: ["string", "null"]
+          enum: [male, female, null]
         phone:
           type: ["string", "null"]
         managerId:
@@ -907,7 +974,7 @@ components:
 
     AdminEmployeeInput:
       type: object
-      required: [name, email, department, position, joinDate, role, password]
+      required: [name, email, department, position, joinDate, gender, role, password]
       properties:
         name:
           type: string
@@ -919,6 +986,9 @@ components:
           type: string
         joinDate:
           type: string
+        gender:
+          type: string
+          enum: [male, female]
         avatarInitials:
           type: ["string", "null"]
         phone:
@@ -936,10 +1006,15 @@ components:
       properties:
         name:
           type: ["string", "null"]
+        email:
+          type: ["string", "null"]
         department:
           type: ["string", "null"]
         position:
           type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+          enum: [male, female, null]
         phone:
           type: ["string", "null"]
         managerName:
@@ -971,9 +1046,84 @@ components:
         hoursWorked:
           type: ["number", "null"]
 
+    AdminLeavesPage:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaveRequest"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    AdminRequestsPage:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmployeeRequest"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    AdminEmployeesPage:
+      type: object
+      required: [items, total, page, limit]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    AdminAttendancePage:
+      type: object
+      required: [items, total, page, limit, presentToday, totalEmployees]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminAttendanceRow"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        presentToday:
+          type: integer
+        totalEmployees:
+          type: integer
+
     AdminOverview:
       type: object
-      required: [pendingLeaves, pendingRequests, totalEmployees, totalAnnouncements]
+      required:
+        - pendingLeaves
+        - pendingRequests
+        - totalEmployees
+        - totalAnnouncements
+        - joinedThisMonth
+        - presentToday
+        - onLeaveToday
+        - notClockedIn
+        - pendingLeaveItems
+        - recentRequests
+        - outToday
       properties:
         pendingLeaves:
           type: integer
@@ -983,3 +1133,27 @@ components:
           type: integer
         totalAnnouncements:
           type: integer
+        joinedThisMonth:
+          type: integer
+        presentToday:
+          type: integer
+        onLeaveToday:
+          type: integer
+        notClockedIn:
+          type: integer
+        pendingLeaveItems:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaveRequest"
+        recentRequests:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmployeeRequest"
+        outToday:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaveRequest"
+        latestAnnouncement:
+          oneOf:
+            - $ref: "#/components/schemas/AnnouncementItem"
+            - type: "null"

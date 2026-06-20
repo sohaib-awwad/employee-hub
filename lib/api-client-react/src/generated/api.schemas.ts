@@ -17,6 +17,17 @@ export const EmployeeRole = {
   admin: 'admin',
 } as const;
 
+/**
+ * @nullable
+ */
+export type EmployeeGender = typeof EmployeeGender[keyof typeof EmployeeGender] | null;
+
+
+export const EmployeeGender = {
+  male: 'male',
+  female: 'female',
+} as const;
+
 export interface Employee {
   id: number;
   name: string;
@@ -26,6 +37,8 @@ export interface Employee {
   joinDate: string;
   avatarInitials: string;
   role: EmployeeRole;
+  /** @nullable */
+  gender?: EmployeeGender;
   /** @nullable */
   phone?: string | null;
   /** @nullable */
@@ -299,6 +312,14 @@ export interface AnnouncementInput {
   publishedAt: string;
 }
 
+export type AdminEmployeeInputGender = typeof AdminEmployeeInputGender[keyof typeof AdminEmployeeInputGender];
+
+
+export const AdminEmployeeInputGender = {
+  male: 'male',
+  female: 'female',
+} as const;
+
 export type AdminEmployeeInputRole = typeof AdminEmployeeInputRole[keyof typeof AdminEmployeeInputRole];
 
 
@@ -313,6 +334,7 @@ export interface AdminEmployeeInput {
   department: string;
   position: string;
   joinDate: string;
+  gender: AdminEmployeeInputGender;
   /** @nullable */
   avatarInitials?: string | null;
   /** @nullable */
@@ -322,6 +344,17 @@ export interface AdminEmployeeInput {
   role: AdminEmployeeInputRole;
   password: string;
 }
+
+/**
+ * @nullable
+ */
+export type AdminEmployeeUpdateGender = typeof AdminEmployeeUpdateGender[keyof typeof AdminEmployeeUpdateGender] | null;
+
+
+export const AdminEmployeeUpdateGender = {
+  male: 'male',
+  female: 'female',
+} as const;
 
 /**
  * @nullable
@@ -338,9 +371,13 @@ export interface AdminEmployeeUpdate {
   /** @nullable */
   name?: string | null;
   /** @nullable */
+  email?: string | null;
+  /** @nullable */
   department?: string | null;
   /** @nullable */
   position?: string | null;
+  /** @nullable */
+  gender?: AdminEmployeeUpdateGender;
   /** @nullable */
   phone?: string | null;
   /** @nullable */
@@ -367,11 +404,49 @@ export interface AdminAttendanceRow {
   hoursWorked?: number | null;
 }
 
+export interface AdminLeavesPage {
+  items: LeaveRequest[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface AdminRequestsPage {
+  items: EmployeeRequest[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface AdminEmployeesPage {
+  items: Employee[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface AdminAttendancePage {
+  items: AdminAttendanceRow[];
+  total: number;
+  page: number;
+  limit: number;
+  presentToday: number;
+  totalEmployees: number;
+}
+
 export interface AdminOverview {
   pendingLeaves: number;
   pendingRequests: number;
   totalEmployees: number;
   totalAnnouncements: number;
+  joinedThisMonth: number;
+  presentToday: number;
+  onLeaveToday: number;
+  notClockedIn: number;
+  pendingLeaveItems: LeaveRequest[];
+  recentRequests: EmployeeRequest[];
+  outToday: LeaveRequest[];
+  latestAnnouncement?: AnnouncementItem | null;
 }
 
 export type ListAttendanceParams = {
@@ -437,6 +512,12 @@ export type AdminListLeavesParams = {
  * @nullable
  */
 status?: AdminListLeavesStatus;
+/**
+ * @nullable
+ */
+q?: string | null;
+page?: number;
+limit?: number;
 };
 
 export type AdminListLeavesStatus = typeof AdminListLeavesStatus[keyof typeof AdminListLeavesStatus] | null;
@@ -454,6 +535,12 @@ export type AdminListRequestsParams = {
  * @nullable
  */
 status?: AdminListRequestsStatus;
+/**
+ * @nullable
+ */
+q?: string | null;
+page?: number;
+limit?: number;
 };
 
 export type AdminListRequestsStatus = typeof AdminListRequestsStatus[keyof typeof AdminListRequestsStatus] | null;
@@ -463,5 +550,40 @@ export const AdminListRequestsStatus = {
   pending: 'pending',
   approved: 'approved',
   rejected: 'rejected',
+} as const;
+
+export type AdminListEmployeesParams = {
+/**
+ * @nullable
+ */
+q?: string | null;
+page?: number;
+limit?: number;
+};
+
+export type AdminListAttendanceTodayParams = {
+/**
+ * @nullable
+ */
+status?: string | null;
+/**
+ * @nullable
+ */
+q?: string | null;
+/**
+ * @nullable
+ */
+sort?: AdminListAttendanceTodaySort;
+page?: number;
+limit?: number;
+};
+
+export type AdminListAttendanceTodaySort = typeof AdminListAttendanceTodaySort[keyof typeof AdminListAttendanceTodaySort] | null;
+
+
+export const AdminListAttendanceTodaySort = {
+  name: 'name',
+  punchIn: 'punchIn',
+  status: 'status',
 } as const;
 

@@ -5,6 +5,7 @@ import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
 import { differenceInBusinessDays, parseISO, addDays } from "date-fns";
 import { requireAuth } from "../middlewares/auth";
+import { allowancesFor, isLeaveTypeAllowed } from "../lib/leave";
 
 const LeaveInputSchema = z.object({
   type: z.enum(["annual", "sick", "casual", "maternity", "paternity", "unpaid", "other"]),
@@ -18,16 +19,6 @@ function calcBusinessDays(start: string, end: string): number {
   const e = parseISO(end);
   return differenceInBusinessDays(addDays(e, 1), s);
 }
-
-const LEAVE_ALLOWANCES: Record<string, number> = {
-  annual: 21,
-  sick: 10,
-  casual: 7,
-  maternity: 90,
-  paternity: 14,
-  unpaid: 30,
-  other: 5,
-};
 
 const router: IRouter = Router();
 
@@ -59,6 +50,13 @@ router.post("/leaves", async (req, res) => {
     }
 
     const { type, startDate, endDate, reason } = parsed.data;
+
+    // Guard gender-specific leave: a male can't request maternity, etc.
+    if (!isLeaveTypeAllowed(type, req.user!.gender)) {
+      res.status(400).json({ error: `${type} leave is not available for your account` });
+      return;
+    }
+
     const days = calcBusinessDays(startDate, endDate);
 
     if (days <= 0) {
@@ -99,23 +97,25 @@ router.get("/leaves/balance", async (req, res) => {
         )
       );
 
+    const allowances = allowancesFor(req.user!.gender);
+
     const usedByType: Record<string, number> = {};
     for (const leave of leaves) {
       usedByType[leave.type] = (usedByType[leave.type] || 0) + leave.days;
     }
 
-    const details = Object.entries(LEAVE_ALLOWANCES).map(([type, total]) => ({
+    const details = Object.entries(allowances).map(([type, total]) => ({
       type,
       total,
       used: usedByType[type] || 0,
       remaining: total - (usedByType[type] || 0),
     }));
 
-    const annual = LEAVE_ALLOWANCES.annual - (usedByType.annual || 0);
-    const sick = LEAVE_ALLOWANCES.sick - (usedByType.sick || 0);
-    const casual = LEAVE_ALLOWANCES.casual - (usedByType.casual || 0);
+    const annual = allowances.annual - (usedByType.annual || 0);
+    const sick = allowances.sick - (usedByType.sick || 0);
+    const casual = allowances.casual - (usedByType.casual || 0);
     const used = Object.values(usedByType).reduce((a, b) => a + b, 0);
-    const remaining = Object.values(LEAVE_ALLOWANCES).reduce((a, b) => a + b, 0) - used;
+    const remaining = Object.values(allowances).reduce((a, b) => a + b, 0) - used;
 
     res.json({ annual, sick, casual, used, remaining, details });
   } catch (err) {

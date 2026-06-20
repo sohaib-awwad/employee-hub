@@ -21,12 +21,17 @@ import type {
 
 import type {
   ActionInput,
-  AdminAttendanceRow,
+  AdminAttendancePage,
   AdminEmployeeInput,
   AdminEmployeeUpdate,
+  AdminEmployeesPage,
+  AdminLeavesPage,
+  AdminListAttendanceTodayParams,
+  AdminListEmployeesParams,
   AdminListLeavesParams,
   AdminListRequestsParams,
   AdminOverview,
+  AdminRequestsPage,
   AnnouncementInput,
   AnnouncementItem,
   AnnouncementsPage,
@@ -1512,11 +1517,11 @@ export const getAdminListLeavesUrl = (params?: AdminListLeavesParams,) => {
 }
 
 /**
- * @summary List all leave requests
+ * @summary List all leave requests (paginated)
  */
-export const adminListLeaves = async (params?: AdminListLeavesParams, options?: RequestInit): Promise<LeaveRequest[]> => {
+export const adminListLeaves = async (params?: AdminListLeavesParams, options?: RequestInit): Promise<AdminLeavesPage> => {
 
-  return customFetch<LeaveRequest[]>(getAdminListLeavesUrl(params),
+  return customFetch<AdminLeavesPage>(getAdminListLeavesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1559,7 +1564,7 @@ export type AdminListLeavesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List all leave requests
+ * @summary List all leave requests (paginated)
  */
 
 export function useAdminListLeaves<TData = Awaited<ReturnType<typeof adminListLeaves>>, TError = ErrorType<unknown>>(
@@ -1738,11 +1743,11 @@ export const getAdminListRequestsUrl = (params?: AdminListRequestsParams,) => {
 }
 
 /**
- * @summary List all employee requests
+ * @summary List all employee requests (paginated)
  */
-export const adminListRequests = async (params?: AdminListRequestsParams, options?: RequestInit): Promise<EmployeeRequest[]> => {
+export const adminListRequests = async (params?: AdminListRequestsParams, options?: RequestInit): Promise<AdminRequestsPage> => {
 
-  return customFetch<EmployeeRequest[]>(getAdminListRequestsUrl(params),
+  return customFetch<AdminRequestsPage>(getAdminListRequestsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1785,7 +1790,7 @@ export type AdminListRequestsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List all employee requests
+ * @summary List all employee requests (paginated)
  */
 
 export function useAdminListRequests<TData = Awaited<ReturnType<typeof adminListRequests>>, TError = ErrorType<unknown>>(
@@ -2161,20 +2166,27 @@ export const useAdminDeleteAnnouncement = <TError = ErrorType<unknown>,
       return useMutation(getAdminDeleteAnnouncementMutationOptions(options));
     }
 
-export const getAdminListEmployeesUrl = () => {
+export const getAdminListEmployeesUrl = (params?: AdminListEmployeesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/admin/employees`
+  return stringifiedParams.length > 0 ? `/api/admin/employees?${stringifiedParams}` : `/api/admin/employees`
 }
 
 /**
- * @summary List all employees
+ * @summary List all employees (paginated)
  */
-export const adminListEmployees = async ( options?: RequestInit): Promise<Employee[]> => {
+export const adminListEmployees = async (params?: AdminListEmployeesParams, options?: RequestInit): Promise<AdminEmployeesPage> => {
 
-  return customFetch<Employee[]>(getAdminListEmployeesUrl(),
+  return customFetch<AdminEmployeesPage>(getAdminListEmployeesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2187,23 +2199,23 @@ export const adminListEmployees = async ( options?: RequestInit): Promise<Employ
 
 
 
-export const getAdminListEmployeesQueryKey = () => {
+export const getAdminListEmployeesQueryKey = (params?: AdminListEmployeesParams,) => {
     return [
-    `/api/admin/employees`
+    `/api/admin/employees`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getAdminListEmployeesQueryOptions = <TData = Awaited<ReturnType<typeof adminListEmployees>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListEmployees>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getAdminListEmployeesQueryOptions = <TData = Awaited<ReturnType<typeof adminListEmployees>>, TError = ErrorType<unknown>>(params?: AdminListEmployeesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListEmployees>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getAdminListEmployeesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getAdminListEmployeesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListEmployees>>> = ({ signal }) => adminListEmployees({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListEmployees>>> = ({ signal }) => adminListEmployees(params, { signal, ...requestOptions });
 
 
 
@@ -2217,15 +2229,15 @@ export type AdminListEmployeesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List all employees
+ * @summary List all employees (paginated)
  */
 
 export function useAdminListEmployees<TData = Awaited<ReturnType<typeof adminListEmployees>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListEmployees>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: AdminListEmployeesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListEmployees>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getAdminListEmployeesQueryOptions(options)
+  const queryOptions = getAdminListEmployeesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -2381,20 +2393,97 @@ export const useAdminUpdateEmployee = <TError = ErrorType<unknown>,
       return useMutation(getAdminUpdateEmployeeMutationOptions(options));
     }
 
-export const getAdminListAttendanceTodayUrl = () => {
+export const getAdminDeleteEmployeeUrl = (id: number,) => {
 
 
 
 
-  return `/api/admin/attendance`
+  return `/api/admin/employees/${id}`
 }
 
 /**
- * @summary Today's attendance across all employees
+ * @summary Delete an employee
  */
-export const adminListAttendanceToday = async ( options?: RequestInit): Promise<AdminAttendanceRow[]> => {
+export const adminDeleteEmployee = async (id: number, options?: RequestInit): Promise<void> => {
 
-  return customFetch<AdminAttendanceRow[]>(getAdminListAttendanceTodayUrl(),
+  return customFetch<void>(getAdminDeleteEmployeeUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getAdminDeleteEmployeeMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteEmployee>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminDeleteEmployee>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['adminDeleteEmployee'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminDeleteEmployee>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  adminDeleteEmployee(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminDeleteEmployeeMutationResult = NonNullable<Awaited<ReturnType<typeof adminDeleteEmployee>>>
+
+    export type AdminDeleteEmployeeMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an employee
+ */
+export const useAdminDeleteEmployee = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteEmployee>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminDeleteEmployee>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getAdminDeleteEmployeeMutationOptions(options));
+    }
+
+export const getAdminListAttendanceTodayUrl = (params?: AdminListAttendanceTodayParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/attendance?${stringifiedParams}` : `/api/admin/attendance`
+}
+
+/**
+ * @summary Today's attendance across all employees (paginated)
+ */
+export const adminListAttendanceToday = async (params?: AdminListAttendanceTodayParams, options?: RequestInit): Promise<AdminAttendancePage> => {
+
+  return customFetch<AdminAttendancePage>(getAdminListAttendanceTodayUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2407,23 +2496,23 @@ export const adminListAttendanceToday = async ( options?: RequestInit): Promise<
 
 
 
-export const getAdminListAttendanceTodayQueryKey = () => {
+export const getAdminListAttendanceTodayQueryKey = (params?: AdminListAttendanceTodayParams,) => {
     return [
-    `/api/admin/attendance`
+    `/api/admin/attendance`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getAdminListAttendanceTodayQueryOptions = <TData = Awaited<ReturnType<typeof adminListAttendanceToday>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListAttendanceToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getAdminListAttendanceTodayQueryOptions = <TData = Awaited<ReturnType<typeof adminListAttendanceToday>>, TError = ErrorType<unknown>>(params?: AdminListAttendanceTodayParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListAttendanceToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getAdminListAttendanceTodayQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getAdminListAttendanceTodayQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListAttendanceToday>>> = ({ signal }) => adminListAttendanceToday({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListAttendanceToday>>> = ({ signal }) => adminListAttendanceToday(params, { signal, ...requestOptions });
 
 
 
@@ -2437,15 +2526,15 @@ export type AdminListAttendanceTodayQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Today's attendance across all employees
+ * @summary Today's attendance across all employees (paginated)
  */
 
 export function useAdminListAttendanceToday<TData = Awaited<ReturnType<typeof adminListAttendanceToday>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListAttendanceToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: AdminListAttendanceTodayParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListAttendanceToday>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getAdminListAttendanceTodayQueryOptions(options)
+  const queryOptions = getAdminListAttendanceTodayQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

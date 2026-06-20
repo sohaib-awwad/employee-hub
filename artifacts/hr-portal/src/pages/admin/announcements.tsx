@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "wouter";
+import { useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,8 +21,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TablePagination } from "@/components/table-pagination";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { format, parseISO } from "date-fns";
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const schema = z.object({
@@ -35,25 +38,45 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 const PRIORITY_STYLE: Record<string, string> = {
-  high: "bg-red-100 text-red-700",
-  medium: "bg-blue-100 text-blue-700",
-  low: "bg-gray-100 text-gray-500",
+  high: "bg-danger/15 text-danger",
+  medium: "bg-info/15 text-info",
+  low: "bg-muted text-muted-foreground",
 };
 
-const LIST_PARAMS = { page: 1, limit: 50 };
+const PAGE_SIZE = 10;
+
+const TYPE_TABS = [
+  { value: "all", label: "All" },
+  { value: "announcement", label: "Announcements" },
+  { value: "event", label: "Events" },
+] as const;
 
 export default function AdminAnnouncements() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AnnouncementItem | null>(null);
+  const [tab, setTab] = useState<(typeof TYPE_TABS)[number]["value"]>("all");
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedQ = useDebouncedValue(q.trim(), 300);
 
-  const { data, isLoading } = useListAnnouncements(LIST_PARAMS, {
-    query: { queryKey: getListAnnouncementsQueryKey(LIST_PARAMS) },
+  // Any change to the type tab or search resets us to the first page.
+  useEffect(() => setPage(1), [tab, debouncedQ]);
+
+  const params = {
+    type: tab === "all" ? undefined : tab,
+    q: debouncedQ || undefined,
+    page,
+    limit: PAGE_SIZE,
+  };
+  const { data, isLoading } = useListAnnouncements(params, {
+    query: { queryKey: getListAnnouncementsQueryKey(params), placeholderData: keepPreviousData },
   });
   const create = useAdminCreateAnnouncement();
   const update = useAdminUpdateAnnouncement();
   const remove = useAdminDeleteAnnouncement();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -72,6 +95,15 @@ export default function AdminAnnouncements() {
     form.reset({ title: "", body: "", category: "Company News", priority: "medium", type: "announcement", publishedAt: format(new Date(), "yyyy-MM-dd") });
     setDialogOpen(true);
   };
+
+  // Opened from the sidebar quick-actions popup (?new=1) — auto-open the dialog.
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      openCreate();
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const openEdit = (a: AnnouncementItem) => {
     setEditing(a);
@@ -97,10 +129,11 @@ export default function AdminAnnouncements() {
   };
 
   const items = data?.items ?? [];
+  const total = data?.total ?? 0;
   const saving = create.isPending || update.isPending;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Announcements</h1>
@@ -109,6 +142,33 @@ export default function AdminAnnouncements() {
         <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2" onClick={openCreate} data-testid="button-new-announcement">
           <Plus className="w-4 h-4" /> New
         </Button>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-2 flex-wrap">
+          {TYPE_TABS.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTab(t.value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                tab === t.value ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
+              }`}
+              data-testid={`tab-${t.value}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            className="pl-9 border-border bg-card text-sm"
+            placeholder="Search title, category…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            data-testid="input-search"
+          />
+        </div>
       </div>
 
       <Card className="border-border shadow-sm overflow-hidden">
@@ -139,7 +199,7 @@ export default function AdminAnnouncements() {
                     <td className="px-5 py-3.5">
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={() => openEdit(a)} data-testid={`button-edit-${a.id}`}><Pencil className="w-4 h-4" /></Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 text-red-600 hover:bg-red-50" onClick={() => onDelete(a)} data-testid={`button-delete-${a.id}`}><Trash2 className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-danger hover:bg-danger/10" onClick={() => onDelete(a)} data-testid={`button-delete-${a.id}`}><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </td>
                   </tr>
@@ -149,6 +209,8 @@ export default function AdminAnnouncements() {
           </table>
         </CardContent>
       </Card>
+
+      <TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">

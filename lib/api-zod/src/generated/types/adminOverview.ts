@@ -5,10 +5,21 @@
  * HR Employee Portal API
  * OpenAPI spec version: 0.1.0
  */
+import type { AnnouncementItem } from './announcementItem';
+import type { EmployeeRequest } from './employeeRequest';
+import type { LeaveRequest } from './leaveRequest';
 
 export interface AdminOverview {
   pendingLeaves: number;
   pendingRequests: number;
   totalEmployees: number;
   totalAnnouncements: number;
+  joinedThisMonth: number;
+  presentToday: number;
+  onLeaveToday: number;
+  notClockedIn: number;
+  pendingLeaveItems: LeaveRequest[];
+  recentRequests: EmployeeRequest[];
+  outToday: LeaveRequest[];
+  latestAnnouncement?: AnnouncementItem | null;
 }
