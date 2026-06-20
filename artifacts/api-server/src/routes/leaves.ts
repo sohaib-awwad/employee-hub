@@ -57,10 +57,16 @@ router.post("/leaves", async (req, res) => {
       return;
     }
 
+    // Dates are ISO yyyy-mm-dd strings, so a lexical compare orders them.
+    if (endDate < startDate) {
+      res.status(400).json({ error: "End date must be on or after the start date." });
+      return;
+    }
+
     const days = calcBusinessDays(startDate, endDate);
 
     if (days <= 0) {
-      res.status(400).json({ error: "End date must be after start date" });
+      res.status(400).json({ error: "Those dates fall entirely on weekends — pick a range with at least one working day." });
       return;
     }
 

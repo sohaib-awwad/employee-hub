@@ -25,6 +25,14 @@ const leaveSchema = z.object({
   reason: z.string().min(5, "Reason must be at least 5 characters"),
 });
 
+// Pull the human-readable message the API returned (ApiError carries the parsed
+// JSON body on `.data`), falling back to a generic line.
+function apiErrorMessage(error: unknown, fallback: string): string {
+  const data = (error as { data?: unknown } | null)?.data;
+  const msg = data && typeof data === "object" ? (data as { error?: unknown }).error : undefined;
+  return typeof msg === "string" && msg.trim() ? msg : fallback;
+}
+
 // Leave types offered when applying. Maternity is female-only and paternity
 // male-only, so an employee never sees a leave type that doesn't apply to them.
 const LEAVE_TYPE_OPTIONS: { value: string; label: string; gender?: "male" | "female" }[] = [
@@ -94,8 +102,12 @@ export default function LeaveRequests() {
         form.reset();
         toast({ title: "Leave request submitted successfully" });
       },
-      onError: () => {
-        toast({ title: "Failed to submit leave request", variant: "destructive" });
+      onError: (error) => {
+        toast({
+          title: "Couldn't submit leave request",
+          description: apiErrorMessage(error, "Please try again."),
+          variant: "destructive",
+        });
       }
     });
   };
