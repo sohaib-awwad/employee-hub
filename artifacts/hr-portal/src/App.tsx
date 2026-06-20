@@ -109,8 +109,8 @@ function AuthedRoutes() {
     <Layout>
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/attendance" component={Attendance} />
-        <Route path="/leave-requests" component={LeaveRequests} />
+        <Route path="/attendance"><Attendance /></Route>
+        <Route path="/leave-requests"><LeaveRequests /></Route>
         <Route path="/announcements" component={Announcements} />
         <Route path="/login">
           <Redirect to="/" />

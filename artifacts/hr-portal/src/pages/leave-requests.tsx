@@ -67,7 +67,7 @@ const MAIN_TYPES = ["annual", "sick", "casual", "unpaid"];
 const COMPANY_TYPES = ["maternity", "paternity", "other"];
 const PAGE_SIZE = 10;
 
-export default function LeaveRequests() {
+export default function LeaveRequests({ embedded = false }: { embedded?: boolean }) {
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -153,14 +153,16 @@ export default function LeaveRequests() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="max-w-6xl mx-auto space-y-6"
+      className={embedded ? "space-y-6" : "max-w-6xl mx-auto space-y-6"}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Leave Requests</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Manage your leave applications and track your balances.</p>
-        </div>
+      <div className={`flex flex-col sm:flex-row sm:items-center gap-4 ${embedded ? "sm:justify-end" : "sm:justify-between"}`}>
+        {!embedded && (
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Leave Requests</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Manage your leave applications and track your balances.</p>
+          </div>
+        )}
         <Button
           className="bg-primary hover:bg-primary/90 text-white gap-2 self-start sm:self-auto"
           onClick={() => setIsApplyOpen(true)}

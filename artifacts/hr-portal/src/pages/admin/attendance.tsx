@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { TablePagination } from "@/components/table-pagination";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import Attendance from "@/pages/attendance";
 import { format } from "date-fns";
 import { Search, ArrowUpDown } from "lucide-react";
 
@@ -66,10 +67,26 @@ export default function AdminAttendance() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Attendance — {format(new Date(), "MMM d, yyyy")}</h1>
+        <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {present} of {totalEmployees} present today.
+          Your own attendance and the team's, for {format(new Date(), "MMM d, yyyy")}.
         </p>
+      </div>
+
+      {/* My Attendance — the admin is an employee too (punch in/out, breaks, hours). */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-5 bg-primary rounded-full" />
+          <h2 className="text-base font-semibold text-foreground">My Attendance</h2>
+        </div>
+        <Attendance embedded />
+      </section>
+
+      {/* Team overview */}
+      <div className="flex items-center gap-2 pt-2">
+        <div className="w-1 h-5 bg-primary rounded-full" />
+        <h2 className="text-base font-semibold text-foreground">Team Attendance</h2>
+        <span className="text-sm text-muted-foreground">· {present} of {totalEmployees} present today</span>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

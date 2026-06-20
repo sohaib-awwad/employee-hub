@@ -86,7 +86,7 @@ function buildTimeline(record: TodayAttendance | undefined, now: string): Timeli
   return segs;
 }
 
-export default function Attendance() {
+export default function Attendance({ embedded = false }: { embedded?: boolean }) {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchDate, setSearchDate] = useState("");
@@ -174,14 +174,16 @@ export default function Attendance() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="max-w-6xl mx-auto space-y-6"
+      className={embedded ? "space-y-6" : "max-w-6xl mx-auto space-y-6"}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Track your daily attendance, breaks, and work hours</p>
-        </div>
+      <div className={`flex flex-col sm:flex-row sm:items-center gap-4 ${embedded ? "sm:justify-end" : "sm:justify-between"}`}>
+        {!embedded && (
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Track your daily attendance, breaks, and work hours</p>
+          </div>
+        )}
         <Button
           className="bg-primary hover:bg-primary/90 text-white gap-2 self-start sm:self-auto"
           onClick={() => setAttendanceReqOpen(true)}

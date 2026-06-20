@@ -16,6 +16,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { format, parseISO } from "date-fns";
 import { Check, X, Loader2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import LeaveRequests from "@/pages/leave-requests";
 
 const PAGE_SIZE = 10;
 
@@ -31,6 +32,7 @@ const TABS = ["pending", "all", "approved", "rejected"] as const;
 export default function AdminLeaves() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [view, setView] = useState<"approvals" | "mine">("approvals");
   const [tab, setTab] = useState<(typeof TABS)[number]>("pending");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -78,10 +80,29 @@ export default function AdminLeaves() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Leave Approvals</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Approve or reject leave requests — approved days update the employee's balance.
+          Review the team's leave requests — or file and track your own.
         </p>
       </div>
 
+      <div className="flex gap-2">
+        {(["approvals", "mine"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold ${
+              view === v ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
+            }`}
+            data-testid={`leave-view-${v}`}
+          >
+            {v === "approvals" ? "Approvals" : "My requests"}
+          </button>
+        ))}
+      </div>
+
+      {view === "mine" && <LeaveRequests embedded />}
+
+      {view === "approvals" && (
+        <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-2 flex-wrap">
           {TABS.map((t) => (
@@ -162,6 +183,8 @@ export default function AdminLeaves() {
       </Card>
 
       <TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+        </>
+      )}
     </div>
   );
 }
