@@ -15,7 +15,6 @@ import {
   X,
   Sparkles,
   Plane,
-  CalendarRange,
   Pencil,
   LogOut
 } from "lucide-react";
@@ -227,27 +226,24 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </main>
         
-        {/* Floating Quick Actions Button */}
+        {/* Floating Quick Actions Button — mirrors the admin popup: each action
+            navigates to its page and opens the matching form there (via ?new=1). */}
         <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50">
           <Popover>
             <PopoverTrigger asChild>
               <Button className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl bg-primary hover:bg-primary/90 p-0">
-                <Sparkles className="h-6 w-6 text-white" />
+                <Sparkles className="h-6 w-6 text-primary-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-56 p-2 rounded-xl border-border shadow-xl" sideOffset={16}>
               <div className="flex flex-col space-y-1">
-                <Button variant="ghost" className="justify-start px-3 text-foreground hover:bg-accent/60 hover:text-primary" onClick={() => setLocation('/leave-requests')}>
+                <Button variant="ghost" className="justify-start px-3 text-foreground hover:bg-accent/60 hover:text-primary" onClick={() => setLocation('/leave-requests?new=1')} data-testid="quick-apply-leave">
                   <Plane className="mr-2 h-4 w-4" />
                   Apply Leave
                 </Button>
-                <Button variant="ghost" className="justify-start px-3 text-foreground hover:bg-accent/60 hover:text-primary" onClick={() => setLocation('/attendance')}>
+                <Button variant="ghost" className="justify-start px-3 text-foreground hover:bg-accent/60 hover:text-primary" onClick={() => setLocation('/attendance?new=1')} data-testid="quick-request-correction">
                   <Pencil className="mr-2 h-4 w-4" />
                   Request Correction
-                </Button>
-                <Button variant="ghost" className="justify-start px-3 text-foreground hover:bg-accent/60 hover:text-primary">
-                  <CalendarRange className="mr-2 h-4 w-4" />
-                  View Holidays
                 </Button>
               </div>
             </PopoverContent>

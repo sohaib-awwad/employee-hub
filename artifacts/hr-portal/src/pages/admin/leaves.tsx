@@ -90,7 +90,7 @@ export default function AdminLeaves() {
             key={v}
             onClick={() => setView(v)}
             className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-              view === v ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
+              view === v ? "bg-primary text-primary-foreground" : "bg-accent/60 text-muted-foreground hover:bg-accent"
             }`}
             data-testid={`leave-view-${v}`}
           >
@@ -110,7 +110,7 @@ export default function AdminLeaves() {
               key={t}
               onClick={() => setTab(t)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize ${
-                tab === t ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
+                tab === t ? "bg-primary text-primary-foreground" : "bg-accent/60 text-muted-foreground hover:bg-accent"
               }`}
               data-testid={`tab-${t}`}
             >

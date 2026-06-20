@@ -151,7 +151,7 @@ export default function AdminAnnouncements() {
               key={t.value}
               onClick={() => setTab(t.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                tab === t.value ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
+                tab === t.value ? "bg-primary text-primary-foreground" : "bg-accent/60 text-muted-foreground hover:bg-accent"
               }`}
               data-testid={`tab-${t.value}`}
             >

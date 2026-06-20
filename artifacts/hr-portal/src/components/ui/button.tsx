@@ -11,8 +11,10 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-           // @replit: no hover, and add primary border
-           "bg-primary text-primary-foreground border border-primary-border",
+           // Brand primary button: filled, borderless. `text-primary-foreground`
+           // is white in light mode and dark ink in dark mode, so the label
+           // always contrasts the primary surface (no hardcoded text-white).
+           "bg-primary text-primary-foreground",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm border-destructive-border",
         outline:

@@ -82,14 +82,14 @@ export default function Announcements() {
           onClick={() => handleTabChange("announcement")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
             activeType === "announcement"
-              ? "bg-primary text-white"
+              ? "bg-primary text-primary-foreground"
               : "bg-accent/60 text-muted-foreground hover:bg-accent"
           }`}
           data-testid="tab-announcements"
         >
           Announcements
           <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-            activeType === "announcement" ? "bg-white/20 text-white" : "bg-card text-muted-foreground"
+            activeType === "announcement" ? "bg-primary-foreground/20 text-primary-foreground" : "bg-card text-muted-foreground"
           }`}>
             {announcementCount}
           </span>
@@ -98,14 +98,14 @@ export default function Announcements() {
           onClick={() => handleTabChange("event")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
             activeType === "event"
-              ? "bg-primary text-white"
+              ? "bg-primary text-primary-foreground"
               : "bg-accent/60 text-muted-foreground hover:bg-accent"
           }`}
           data-testid="tab-events"
         >
           Events
           <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-            activeType === "event" ? "bg-white/20 text-white" : "bg-card text-muted-foreground"
+            activeType === "event" ? "bg-primary-foreground/20 text-primary-foreground" : "bg-card text-muted-foreground"
           }`}>
             {eventCount}
           </span>

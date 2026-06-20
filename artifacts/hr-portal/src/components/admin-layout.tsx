@@ -168,7 +168,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                 className="h-14 w-14 rounded-full shadow-lg hover:shadow-xl bg-primary hover:bg-primary/90 p-0"
                 data-testid="button-quick-actions"
               >
-                <Sparkles className="h-6 w-6 text-white" />
+                <Sparkles className="h-6 w-6 text-primary-foreground" />
               </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-60 p-2 rounded-xl border-border shadow-xl" sideOffset={16}>

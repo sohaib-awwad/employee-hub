@@ -88,7 +88,7 @@ export default function AdminRequests() {
               key={t}
               onClick={() => setTab(t)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize ${
-                tab === t ? "bg-primary text-white" : "bg-accent/60 text-muted-foreground hover:bg-accent"
+                tab === t ? "bg-primary text-primary-foreground" : "bg-accent/60 text-muted-foreground hover:bg-accent"
               }`}
               data-testid={`tab-${t}`}
             >
