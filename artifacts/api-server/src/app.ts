@@ -2,6 +2,9 @@ import express, { type Express } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+import { existsSync } from "node:fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
@@ -43,5 +46,25 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// In production the API also serves the built React SPA, so the whole app runs
+// as a single service behind one URL (the frontend calls /api on the same
+// origin). CLIENT_DIST overrides the location; the default is the frontend's
+// build output relative to this bundle in the monorepo.
+const serverDir = dirname(fileURLToPath(import.meta.url));
+const clientDist = process.env.CLIENT_DIST
+  ? resolve(process.env.CLIENT_DIST)
+  : resolve(serverDir, "../../hr-portal/dist/public");
+
+if (existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // SPA fallback: send index.html for any non-/api GET so client-side routes
+  // (e.g. /admin/requests) work on a hard refresh. /api/* is excluded so
+  // unknown API routes still 404 instead of returning HTML.
+  app.get(/^\/(?!api(?:\/|$)).*/, (_req, res) => {
+    res.sendFile(resolve(clientDist, "index.html"));
+  });
+  logger.info({ clientDist }, "Serving static frontend");
+}
 
 export default app;
