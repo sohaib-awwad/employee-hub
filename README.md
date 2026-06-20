@@ -84,7 +84,12 @@ cp .env.example .env
 # 3. Create the database schema
 pnpm --filter @workspace/db run push
 
-# 4. Run the API (port 5000) and the frontend (Vite) in two terminals
+# 4. (Optional) Seed a realistic demo dataset — roster, ~9 weeks of
+#    attendance, leave, requests, holidays, announcements.
+#    NOTE: this resets every table before inserting.
+pnpm --filter @workspace/db run seed
+
+# 5. Run the API (port 5000) and the frontend (Vite) in two terminals
 pnpm --filter @workspace/api-server run dev
 pnpm --filter @workspace/hr-portal run dev
 ```
