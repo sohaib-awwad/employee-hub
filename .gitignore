@@ -51,3 +51,7 @@ Thumbs.db
 # Local env files (contain DB credentials — never commit)
 .env
 .env.local
+
+# Design handoff/reference material (design-tool exports, screenshots) — kept
+# locally for reference, not part of the application source.
+Skyfall Task-handoff/
