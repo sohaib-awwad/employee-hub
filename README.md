@@ -9,9 +9,8 @@ reports as PDF.
 > the API contract is the single source of truth, and the typed React-Query
 > client and Zod validators are generated from it.
 
-<!-- After deploying, add the link here:
-**Live demo:** https://your-app-url.example.com
--->
+**Live demo:** https://employee-hub-a6dy.onrender.com
+_(free hosting — the first load after a while may take ~30–50s to wake)._
 
 ### Demo accounts
 
