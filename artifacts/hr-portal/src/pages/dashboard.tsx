@@ -9,6 +9,13 @@ import { format, differenceInDays, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Clock, MapPin, BarChart2, Briefcase, CalendarDays, Bell, ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/lib/auth";
+
+function greetingFor(hour: number): string {
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
 
 const formatTimeStr = (time: string) => {
   const [h, m] = time.split(":").map(Number);
@@ -55,6 +62,7 @@ function CircleProgress({ value, max, color, label, sublabel }: {
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -144,6 +152,15 @@ export default function Dashboard() {
   const hasPunchedIn = !!todayAttendance.punchIn;
   const hasPunchedOut = !!todayAttendance.punchOut;
 
+  // Welcome header (mirrors the admin overview greeting).
+  const firstName = user?.name?.trim().split(/\s+/)[0] ?? "there";
+  const dateLabel = format(now, "EEEE · d MMMM yyyy");
+  const greetingSub = !hasPunchedIn
+    ? "You haven't clocked in yet — have a great day."
+    : !hasPunchedOut
+      ? "You're clocked in. Here's your day at a glance."
+      : "You're all wrapped up for today. Nice work.";
+
   const weekTotal = weeklyHours.reduce((s, d) => s + d.hours, 0);
   const weekDays = weeklyHours.filter(d => d.hours > 0).length;
   const maxBar = Math.max(...weeklyHours.map(d => d.hours), 1);
@@ -158,6 +175,15 @@ export default function Dashboard() {
       transition={{ duration: 0.3 }}
       className="space-y-5 max-w-7xl mx-auto"
     >
+      {/* Welcome header — mirrors the admin overview, without the action button */}
+      <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary">{dateLabel}</p>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
+          {greetingFor(now.getHours())}, {firstName}
+        </h1>
+        <p className="mt-1.5 text-[15px] text-muted-foreground">{greetingSub}</p>
+      </div>
+
       {/* Top row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Today's Attendance — spans 2 cols */}
